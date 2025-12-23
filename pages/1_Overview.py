@@ -55,12 +55,6 @@ if df.empty:
 
 # Sidebar filters
 with st.sidebar:
-    # Logo
-    logo_path = "assets/logo.jpg"
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=200)
-
-    st.markdown("---")
     st.header("Filters")
 
     if st.button("🔄 Refresh Data", use_container_width=True, type="primary"):

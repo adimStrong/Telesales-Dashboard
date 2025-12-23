@@ -58,12 +58,6 @@ all_teams = sorted(df["_team"].unique().tolist()) if "_team" in df.columns else 
 
 # Sidebar
 with st.sidebar:
-    # Logo
-    logo_path = "assets/logo.jpg"
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=200)
-
-    st.markdown("---")
     st.header("Filters")
 
     if st.button("🔄 Refresh Data", use_container_width=True, type="primary"):

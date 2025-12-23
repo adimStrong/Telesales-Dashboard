@@ -121,14 +121,6 @@ def render_kpi_cards(kpis: dict):
 def main():
     # Sidebar
     with st.sidebar:
-        # Logo
-        logo_path = "assets/logo.jpg"
-        if os.path.exists(logo_path):
-            st.image(logo_path, width=200)
-        else:
-            st.markdown("### JUAN365")
-
-        st.markdown("---")
         st.header("Filters")
 
         # Refresh button
