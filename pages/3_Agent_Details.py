@@ -26,14 +26,21 @@ st.set_page_config(
     layout="wide"
 )
 
-# Title with logo
-col1, col2 = st.columns([1, 10])
-with col1:
-    logo_path = "assets/logo.jpg"
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=40)
-with col2:
-    st.title("Agent Scorecard")
+# Custom CSS for header
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #FF6B35;
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Header
+st.markdown('<h1 class="main-header">Agent Scorecard</h1>', unsafe_allow_html=True)
 
 # Load data
 with st.spinner("Loading data..."):
@@ -48,6 +55,12 @@ all_agents = get_unique_agents(df)
 
 # Sidebar
 with st.sidebar:
+    # Logo
+    logo_path = "assets/logo.jpg"
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=200)
+
+    st.markdown("---")
     st.header("Filters")
 
     if st.button("🔄 Refresh Data", use_container_width=True, type="primary"):
