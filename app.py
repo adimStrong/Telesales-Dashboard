@@ -102,8 +102,8 @@ def render_kpi_cards(kpis: dict):
             value=format_percentage(kpis["connection_rate"]),
         )
 
-    # Row 2: 3 more KPIs
-    col1, col2, col3 = st.columns(3)
+    # Row 2: 2 more KPIs
+    col1, col2 = st.columns(2)
 
     with col1:
         st.metric(
@@ -113,13 +113,7 @@ def render_kpi_cards(kpis: dict):
 
     with col2:
         st.metric(
-            label="Conv. Rate (Calls)",
-            value=format_percentage(kpis["conversion_rate_calls"]),
-        )
-
-    with col3:
-        st.metric(
-            label="Conv. Rate (Recalled)",
+            label="Recall Conv %",
             value=format_percentage(kpis["conversion_rate_recalled"]),
         )
 
@@ -265,7 +259,7 @@ def main():
                     "Answered": f"{answered:,}",
                     "Not Connected": f"{not_conn:,}",
                     "Recalled": f"{recalled:,}",
-                    "Conv %": f"{conv_rate}%",
+                    "Recall Conv %": f"{conv_rate}%",
                 })
             team_summary = pd.DataFrame(team_data)
             st.dataframe(team_summary, use_container_width=True, hide_index=True)
@@ -293,7 +287,7 @@ def main():
                 m_conv_recall = round(m_recalled / m_answered * 100, 1) if m_answered > 0 else 0
 
                 # Month header with summary
-                month_label = f"📅 {month} | Agents: {m_agents} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Call Conv: {m_conv_call}% | Recall Conv: {m_conv_recall}%"
+                month_label = f"📅 {month} | Agents: {m_agents} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Conn Rate: {m_conv_call}% | Recall Conv: {m_conv_recall}%"
 
                 with st.expander(month_label):
                     # Daily breakdown for this month
@@ -305,8 +299,8 @@ def main():
                         "people_recalled": "sum"
                     }).reset_index()
 
-                    # Calculate both conversion rates
-                    daily_df["Call Conv %"] = daily_df.apply(
+                    # Calculate conversion rates
+                    daily_df["Connection Rate"] = daily_df.apply(
                         lambda row: f"{round(row['answered_calls'] / row['total_calls'] * 100, 1)}%"
                         if row['total_calls'] > 0 else "0%", axis=1
                     )
@@ -326,7 +320,7 @@ def main():
                     daily_df["Recalled"] = daily_df["people_recalled"].apply(lambda x: f"{x:,}")
 
                     # Select display columns and sort by date
-                    display_daily = daily_df[["Date", "Agents", "Total Calls", "Answered", "Not Conn", "Recalled", "Call Conv %", "Recall Conv %"]]
+                    display_daily = daily_df[["Date", "Agents", "Total Calls", "Answered", "Not Conn", "Recalled", "Connection Rate", "Recall Conv %"]]
                     display_daily = display_daily.sort_values("Date", ascending=False)
 
                     st.dataframe(display_daily, use_container_width=True, hide_index=True)
@@ -348,7 +342,7 @@ def main():
             t_conv_recall = round(t_recalled / t_answered * 100, 1) if t_answered > 0 else 0
             t_tl = team_df["_team_leader"].iloc[0] if "_team_leader" in team_df.columns else "-"
 
-            team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Call Conv: {t_conv_call}% | Recall Conv: {t_conv_recall}%"
+            team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Conn Rate: {t_conv_call}% | Recall Conv: {t_conv_recall}%"
 
             with st.expander(team_label):
                 # Agent breakdown for this team
@@ -359,8 +353,8 @@ def main():
                     "people_recalled": "sum"
                 }).reset_index()
 
-                # Calculate both conversion rates
-                agent_df["Call Conv %"] = agent_df.apply(
+                # Calculate conversion rates
+                agent_df["Conn Rate"] = agent_df.apply(
                     lambda row: f"{round(row['answered_calls'] / row['total_calls'] * 100, 1)}%"
                     if row['total_calls'] > 0 else "0%", axis=1
                 )
@@ -379,7 +373,7 @@ def main():
                 # Sort by total calls descending
                 agent_df = agent_df.sort_values("total_calls", ascending=False)
 
-                display_agent = agent_df[["Agent", "Total Calls", "Answered", "Not Conn", "Recalled", "Call Conv %", "Recall Conv %"]]
+                display_agent = agent_df[["Agent", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]]
                 st.dataframe(display_agent, use_container_width=True, hide_index=True)
 
     # By Agent Section (All agents)
@@ -395,8 +389,8 @@ def main():
             "people_recalled": "sum"
         }).reset_index()
 
-        # Calculate both conversion rates
-        all_agents_df["Call Conv %"] = all_agents_df.apply(
+        # Calculate conversion rates
+        all_agents_df["Conn Rate"] = all_agents_df.apply(
             lambda row: f"{round(row['answered_calls'] / row['total_calls'] * 100, 1)}%"
             if row['total_calls'] > 0 else "0%", axis=1
         )
@@ -416,7 +410,7 @@ def main():
         # Sort by total calls descending
         all_agents_df = all_agents_df.sort_values("total_calls", ascending=False)
 
-        display_all = all_agents_df[["Agent", "Team", "Total Calls", "Answered", "Not Conn", "Recalled", "Call Conv %", "Recall Conv %"]]
+        display_all = all_agents_df[["Agent", "Team", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]]
         st.dataframe(display_all, use_container_width=True, hide_index=True)
 
     # Footer

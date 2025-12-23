@@ -111,11 +111,10 @@ col3.metric("Answered Calls", format_number(kpis["answered_calls"]))
 col4.metric("Not Connected", format_number(kpis["not_connected"]))
 col5.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
 
-# Row 2: 3 KPIs
-col1, col2, col3 = st.columns(3)
+# Row 2: 2 KPIs
+col1, col2 = st.columns(2)
 col1.metric("People Recalled", format_number(kpis["people_recalled"]))
-col2.metric("Call Conv %", format_percentage(kpis["conversion_rate_calls"]))
-col3.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
+col2.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
 
 st.markdown("---")
 
