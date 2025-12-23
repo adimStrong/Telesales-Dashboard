@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.env
+.streamlit/secrets.toml
+*.log
+.DS_Store
+debug_*.py
+check_*.py
+test_*.py
+columns.txt
