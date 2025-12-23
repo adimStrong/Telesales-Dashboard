@@ -72,6 +72,22 @@ This document summarizes all changes made to the JUAN365 Telesales Dashboard dur
 
 ---
 
+### 5. Remove Team Type
+**Request:** Remove team type classification from all files
+
+**Changes:**
+- Removed "type" field from SHEET_CONFIG (was: RETENTION, RECALL, VIP)
+- Removed `_team_type` column from data loading
+- Updated documentation to remove team type references
+
+**Files Modified:**
+- `utils/google_sheets.py` - Removed type from config and column assignment
+- `utils/data_processor.py` - Removed from export rename map
+- `README.md` - Removed Type column from Team Sheets table
+- `PROJECT_SUMMARY.md` - Removed `_team_type` from metadata list
+
+---
+
 ## Technical Details
 
 ### Dashboard Structure
@@ -117,6 +133,8 @@ telesales-dashboard/
 2. `Remove sidebar logo, keep header logo only`
 3. `Center logo next to title text`
 4. `Fix daily trends chart for small date ranges`
+5. `Update README with current project documentation`
+6. `Remove team type from all files`
 
 ---
 
