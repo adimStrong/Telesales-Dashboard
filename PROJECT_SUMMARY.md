@@ -97,7 +97,6 @@ telesales-dashboard/
 ### Metadata Added
 - `_team` - Team name (from sheet tab)
 - `_team_leader` - Team leader name
-- `_team_type` - Team classification
 
 ---
 

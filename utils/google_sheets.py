@@ -11,17 +11,17 @@ import time
 
 # Sheet configuration - All 11 TL sheets
 SHEET_CONFIG = {
-    "TL MIKE TEAM A": {"team": "TEAM A", "tl": "MIKE", "type": "RETENTION"},
-    "TL PEARL TEAM B": {"team": "TEAM B", "tl": "PEARL", "type": "RETENTION"},
-    "TL DEXTER TEAM C": {"team": "TEAM C", "tl": "DEXTER", "type": "RECALL"},
-    "TL BOB TEAM D": {"team": "TEAM D", "tl": "BOB", "type": "RECALL"},
-    "TL ONI TEAM E": {"team": "TEAM E", "tl": "ONI", "type": "RECALL"},
-    "TL TRINA TEAM F": {"team": "TEAM F", "tl": "TRINA", "type": "RECALL"},
-    "TL MIRRA TEAM G": {"team": "TEAM G", "tl": "MIRRA", "type": "VIP"},
-    "TL JAYE TEAM H": {"team": "TEAM H", "tl": "JAYE", "type": "VIP"},
-    "TL WINSON TEAM I": {"team": "TEAM I", "tl": "WINSON", "type": "VIP"},
-    "TL ANDRE TEAM J": {"team": "TEAM J", "tl": "ANDRE", "type": "VIP"},
-    "TL NICOLE TEAM K": {"team": "TEAM K", "tl": "NICOLE", "type": "VIP"},
+    "TL MIKE TEAM A": {"team": "TEAM A", "tl": "MIKE"},
+    "TL PEARL TEAM B": {"team": "TEAM B", "tl": "PEARL"},
+    "TL DEXTER TEAM C": {"team": "TEAM C", "tl": "DEXTER"},
+    "TL BOB TEAM D": {"team": "TEAM D", "tl": "BOB"},
+    "TL ONI TEAM E": {"team": "TEAM E", "tl": "ONI"},
+    "TL TRINA TEAM F": {"team": "TEAM F", "tl": "TRINA"},
+    "TL MIRRA TEAM G": {"team": "TEAM G", "tl": "MIRRA"},
+    "TL JAYE TEAM H": {"team": "TEAM H", "tl": "JAYE"},
+    "TL WINSON TEAM I": {"team": "TEAM I", "tl": "WINSON"},
+    "TL ANDRE TEAM J": {"team": "TEAM J", "tl": "ANDRE"},
+    "TL NICOLE TEAM K": {"team": "TEAM K", "tl": "NICOLE"},
 }
 
 # FOR TESTING: Only load one sheet (set to False to load all 11 sheets)
@@ -83,7 +83,6 @@ def load_sheet_data(sheet_name: str, retry_count: int = 0) -> pd.DataFrame:
             config = SHEET_CONFIG[sheet_name]
             df["_team"] = config["team"]
             df["_team_leader"] = config["tl"]
-            df["_team_type"] = config["type"]
             df["_sheet_name"] = sheet_name
 
         return df

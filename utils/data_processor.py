@@ -191,7 +191,6 @@ def prepare_export_data(df: pd.DataFrame) -> pd.DataFrame:
     rename_map = {
         "_team": "Team",
         "_team_leader": "Team Leader",
-        "_team_type": "Team Type",
         "_sheet_name": "Source Sheet",
     }
 

@@ -127,19 +127,19 @@ Data is extracted by column position:
 
 ### Team Sheets (11 Teams)
 
-| Team | Leader | Type |
-|------|--------|------|
-| TEAM A | MIKE | RETENTION |
-| TEAM B | PEARL | RETENTION |
-| TEAM C | DEXTER | RECALL |
-| TEAM D | BOB | RECALL |
-| TEAM E | ONI | RECALL |
-| TEAM F | TRINA | RECALL |
-| TEAM G | MIRRA | VIP |
-| TEAM H | JAYE | VIP |
-| TEAM I | WINSON | VIP |
-| TEAM J | ANDRE | VIP |
-| TEAM K | NICOLE | VIP |
+| Team | Leader |
+|------|--------|
+| TEAM A | MIKE |
+| TEAM B | PEARL |
+| TEAM C | DEXTER |
+| TEAM D | BOB |
+| TEAM E | ONI |
+| TEAM F | TRINA |
+| TEAM G | MIRRA |
+| TEAM H | JAYE |
+| TEAM I | WINSON |
+| TEAM J | ANDRE |
+| TEAM K | NICOLE |
 
 ---
 
