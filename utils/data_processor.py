@@ -13,6 +13,7 @@ from datetime import datetime
 COLUMN_POSITIONS = {
     "date": 0,              # Column A
     "agent_name": 1,        # Column B
+    "recharge_count": 3,    # Column D - Daily Recharge Count
     "total_calls": 7,       # Column H (data shows: 41)
     "not_connected": 11,    # Column L (data shows: 15)
     "answered_calls": 19,   # Column T (data shows: 26)
@@ -103,7 +104,7 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
     # Convert numeric columns
     # =========================================================================
     numeric_cols = [
-        "total_calls", "not_connected", "answered_calls", "people_recalled"
+        "recharge_count", "total_calls", "not_connected", "answered_calls", "people_recalled"
     ]
 
     for col in numeric_cols:

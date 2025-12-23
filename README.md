@@ -15,7 +15,7 @@ A real-time telesales performance dashboard built with Streamlit, powered by Goo
 ## Features
 
 - **Real-time Data** - Live connection to Google Sheets with auto-refresh
-- **7 Key Metrics** - Active Agents, Total Calls, Answered, Not Connected, Connection Rate, People Recalled, Recall Conv %
+- **8 Key Metrics** - Active Agents, Recharge Count, Total Calls, Answered, Not Connected, Connection Rate, People Recalled, Recall Conv %
 - **Multi-page Dashboard** - 5 interactive pages for different views
 - **Smart Filtering** - Date range, team, and agent filters
 - **Interactive Charts** - Plotly visualizations with hover details
@@ -41,6 +41,7 @@ A real-time telesales performance dashboard built with Streamlit, powered by Goo
 | Metric | Description | Formula |
 |--------|-------------|---------|
 | Active Agents | Unique agents in period | COUNT(DISTINCT agent_name) |
+| Recharge Count | Daily recharge count | SUM(recharge_count) |
 | Total Calls | All calls made | SUM(total_calls) |
 | Answered Calls | Connected calls | SUM(answered_calls) |
 | Not Connected | Failed connections | SUM(not_connected) |
@@ -120,6 +121,7 @@ Data is extracted by column position:
 |--------|------|
 | A | Date |
 | B | Agent Name |
+| D | Recharge Count |
 | H | Total Calls |
 | L | Not Connected |
 | T | Answered Calls |

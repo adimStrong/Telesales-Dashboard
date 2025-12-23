@@ -73,6 +73,7 @@ telesales-dashboard/
 | Metric | Description | Formula |
 |--------|-------------|---------|
 | Active Agents | Unique agents in selected period | COUNT(DISTINCT agent_name) |
+| Recharge Count | Daily recharge count | SUM(recharge_count) |
 | Total Calls | All calls made | SUM(total_calls) |
 | Answered Calls | Calls that connected | SUM(answered_calls) |
 | Not Connected | Calls that didn't connect | SUM(not_connected) |
@@ -89,6 +90,7 @@ telesales-dashboard/
 - **Columns Used (Position-Based):**
   - Column A: Date
   - Column B: Agent Name
+  - Column D: Recharge Count
   - Column H: Total Calls
   - Column L: Not Connected
   - Column T: Answered Calls

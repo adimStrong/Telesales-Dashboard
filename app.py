@@ -68,9 +68,9 @@ st.markdown("""
 
 
 def render_kpi_cards(kpis: dict):
-    """Render the main KPI cards - 10 KPIs total"""
-    # Row 1: 5 KPIs
-    col1, col2, col3, col4, col5 = st.columns(5)
+    """Render the main KPI cards"""
+    # Row 1: 4 KPIs
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric(
@@ -80,38 +80,44 @@ def render_kpi_cards(kpis: dict):
 
     with col2:
         st.metric(
+            label="Recharge Count",
+            value=format_number(kpis["recharge_count"]),
+        )
+
+    with col3:
+        st.metric(
             label="Total Calls",
             value=format_number(kpis["total_calls"]),
         )
 
-    with col3:
+    with col4:
         st.metric(
             label="Answered Calls",
             value=format_number(kpis["answered_calls"]),
         )
 
-    with col4:
+    # Row 2: 4 more KPIs
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
         st.metric(
             label="Not Connected",
             value=format_number(kpis["not_connected"]),
         )
 
-    with col5:
+    with col2:
         st.metric(
             label="Connection Rate",
             value=format_percentage(kpis["connection_rate"]),
         )
 
-    # Row 2: 2 more KPIs
-    col1, col2 = st.columns(2)
-
-    with col1:
+    with col3:
         st.metric(
             label="People Recalled",
             value=format_number(kpis["people_recalled"]),
         )
 
-    with col2:
+    with col4:
         st.metric(
             label="Recall Conv %",
             value=format_percentage(kpis["conversion_rate_recalled"]),
@@ -241,6 +247,7 @@ def main():
                 # Count unique agents
                 agent_count = team_df["agent_name"].nunique() if "agent_name" in team_df.columns else 0
                 # Sum metrics
+                recharge = int(team_df["recharge_count"].sum()) if "recharge_count" in team_df.columns else 0
                 total_calls = int(team_df["total_calls"].sum()) if "total_calls" in team_df.columns else 0
                 answered = int(team_df["answered_calls"].sum()) if "answered_calls" in team_df.columns else 0
                 not_conn = int(team_df["not_connected"].sum()) if "not_connected" in team_df.columns else 0
@@ -251,6 +258,7 @@ def main():
                     "Team": team,
                     "TL": team_df["_team_leader"].iloc[0] if "_team_leader" in team_df.columns else "-",
                     "Agents": agent_count,
+                    "Recharge": f"{recharge:,}",
                     "Total Calls": f"{total_calls:,}",
                     "Answered": f"{answered:,}",
                     "Not Connected": f"{not_conn:,}",
@@ -276,6 +284,7 @@ def main():
 
                 # Calculate month totals
                 m_agents = month_df["agent_name"].nunique()
+                m_recharge = month_df["recharge_count"].sum() if "recharge_count" in month_df.columns else 0
                 m_calls = month_df["total_calls"].sum()
                 m_answered = month_df["answered_calls"].sum()
                 m_recalled = month_df["people_recalled"].sum()
@@ -283,12 +292,13 @@ def main():
                 m_conv_recall = round(m_recalled / m_answered * 100, 1) if m_answered > 0 else 0
 
                 # Month header with summary
-                month_label = f"📅 {month} | Agents: {m_agents} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Conn Rate: {m_conv_call}% | Recall Conv: {m_conv_recall}%"
+                month_label = f"📅 {month} | Agents: {m_agents} | Recharge: {m_recharge:,} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Conn Rate: {m_conv_call}% | Recall Conv: {m_conv_recall}%"
 
                 with st.expander(month_label):
                     # Daily breakdown for this month
                     daily_df = month_df.groupby("date").agg({
                         "agent_name": "nunique",
+                        "recharge_count": "sum",
                         "total_calls": "sum",
                         "answered_calls": "sum",
                         "not_connected": "sum",
@@ -310,13 +320,14 @@ def main():
 
                     # Format numbers with commas
                     daily_df["Agents"] = daily_df["agent_name"]
+                    daily_df["Recharge"] = daily_df["recharge_count"].apply(lambda x: f"{x:,}")
                     daily_df["Total Calls"] = daily_df["total_calls"].apply(lambda x: f"{x:,}")
                     daily_df["Answered"] = daily_df["answered_calls"].apply(lambda x: f"{x:,}")
                     daily_df["Not Conn"] = daily_df["not_connected"].apply(lambda x: f"{x:,}")
                     daily_df["Recalled"] = daily_df["people_recalled"].apply(lambda x: f"{x:,}")
 
                     # Select display columns and sort by date
-                    display_daily = daily_df[["Date", "Agents", "Total Calls", "Answered", "Not Conn", "Recalled", "Connection Rate", "Recall Conv %"]]
+                    display_daily = daily_df[["Date", "Agents", "Recharge", "Total Calls", "Answered", "Not Conn", "Recalled", "Connection Rate", "Recall Conv %"]]
                     display_daily = display_daily.sort_values("Date", ascending=False)
 
                     st.dataframe(display_daily, use_container_width=True, hide_index=True)
@@ -331,6 +342,7 @@ def main():
 
             # Calculate team totals
             t_agents = team_df["agent_name"].nunique()
+            t_recharge = team_df["recharge_count"].sum() if "recharge_count" in team_df.columns else 0
             t_calls = team_df["total_calls"].sum()
             t_answered = team_df["answered_calls"].sum()
             t_recalled = team_df["people_recalled"].sum()
@@ -338,11 +350,12 @@ def main():
             t_conv_recall = round(t_recalled / t_answered * 100, 1) if t_answered > 0 else 0
             t_tl = team_df["_team_leader"].iloc[0] if "_team_leader" in team_df.columns else "-"
 
-            team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Conn Rate: {t_conv_call}% | Recall Conv: {t_conv_recall}%"
+            team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Recharge: {t_recharge:,} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Conn Rate: {t_conv_call}% | Recall Conv: {t_conv_recall}%"
 
             with st.expander(team_label):
                 # Agent breakdown for this team
                 agent_df = team_df.groupby("agent_name").agg({
+                    "recharge_count": "sum",
                     "total_calls": "sum",
                     "answered_calls": "sum",
                     "not_connected": "sum",
@@ -361,6 +374,7 @@ def main():
 
                 # Format numbers with commas
                 agent_df["Agent"] = agent_df["agent_name"]
+                agent_df["Recharge"] = agent_df["recharge_count"].apply(lambda x: f"{x:,}")
                 agent_df["Total Calls"] = agent_df["total_calls"].apply(lambda x: f"{x:,}")
                 agent_df["Answered"] = agent_df["answered_calls"].apply(lambda x: f"{x:,}")
                 agent_df["Not Conn"] = agent_df["not_connected"].apply(lambda x: f"{x:,}")
@@ -369,7 +383,7 @@ def main():
                 # Sort by total calls descending
                 agent_df = agent_df.sort_values("total_calls", ascending=False)
 
-                display_agent = agent_df[["Agent", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]]
+                display_agent = agent_df[["Agent", "Recharge", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]]
                 st.dataframe(display_agent, use_container_width=True, hide_index=True)
 
     # By Agent Section (All agents)
@@ -379,6 +393,7 @@ def main():
     with st.expander(f"📋 All {df['agent_name'].nunique()} Agents"):
         # All agents breakdown
         all_agents_df = df.groupby(["agent_name", "_team"]).agg({
+            "recharge_count": "sum",
             "total_calls": "sum",
             "answered_calls": "sum",
             "not_connected": "sum",
@@ -398,6 +413,7 @@ def main():
         # Format numbers with commas
         all_agents_df["Agent"] = all_agents_df["agent_name"]
         all_agents_df["Team"] = all_agents_df["_team"]
+        all_agents_df["Recharge"] = all_agents_df["recharge_count"].apply(lambda x: f"{x:,}")
         all_agents_df["Total Calls"] = all_agents_df["total_calls"].apply(lambda x: f"{x:,}")
         all_agents_df["Answered"] = all_agents_df["answered_calls"].apply(lambda x: f"{x:,}")
         all_agents_df["Not Conn"] = all_agents_df["not_connected"].apply(lambda x: f"{x:,}")
@@ -406,7 +422,7 @@ def main():
         # Sort by total calls descending
         all_agents_df = all_agents_df.sort_values("total_calls", ascending=False)
 
-        display_all = all_agents_df[["Agent", "Team", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]]
+        display_all = all_agents_df[["Agent", "Team", "Recharge", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]]
         st.dataframe(display_all, use_container_width=True, hide_index=True)
 
     # Footer

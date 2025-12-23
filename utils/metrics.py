@@ -82,6 +82,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     if df.empty:
         return {
             "active_agents": 0,
+            "recharge_count": 0,
             "total_calls": 0,
             "answered_calls": 0,
             "not_connected": 0,
@@ -95,6 +96,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     active_agents = get_active_agents_count(df, days=7)
 
     # Sum metrics from columns
+    recharge_count = int(df["recharge_count"].sum()) if "recharge_count" in df.columns else 0
     total_calls = int(df["total_calls"].sum()) if "total_calls" in df.columns else 0
     answered_calls = int(df["answered_calls"].sum()) if "answered_calls" in df.columns else 0
     not_connected = int(df["not_connected"].sum()) if "not_connected" in df.columns else 0
@@ -107,6 +109,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
 
     return {
         "active_agents": int(active_agents),
+        "recharge_count": recharge_count,
         "total_calls": total_calls,
         "answered_calls": answered_calls,
         "not_connected": not_connected,
@@ -126,6 +129,7 @@ def calculate_team_metrics(df: pd.DataFrame) -> pd.DataFrame:
     agg_dict = {}
     col_mapping = {
         "agent_name": "nunique",  # Count unique agents
+        "recharge_count": "sum",
         "total_calls": "sum",
         "answered_calls": "sum",
         "not_connected": "sum",
@@ -180,7 +184,7 @@ def calculate_agent_metrics(df: pd.DataFrame) -> pd.DataFrame:
         group_cols.append("_team")
 
     agg_dict = {}
-    for col in ["total_calls", "answered_calls", "not_connected", "people_recalled"]:
+    for col in ["recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled"]:
         if col in df.columns:
             agg_dict[col] = "sum"
 
@@ -216,7 +220,7 @@ def calculate_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
 
     agg_dict = {}
-    for col in ["total_calls", "answered_calls", "not_connected", "people_recalled"]:
+    for col in ["recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled"]:
         if col in df.columns:
             agg_dict[col] = "sum"
 

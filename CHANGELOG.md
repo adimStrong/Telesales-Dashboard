@@ -88,6 +88,26 @@ This document summarizes all changes made to the JUAN365 Telesales Dashboard dur
 
 ---
 
+### 6. Add Recharge Count Metric
+**Request:** Add daily recharge count from Column D
+
+**Changes:**
+- Added `recharge_count` to column extraction (Column D)
+- Added to all KPI displays (8 metrics now instead of 7)
+- Added to all tables: Teams Overview, Monthly Data, By Team, All Agents
+- Updated metrics calculations in `utils/metrics.py`
+- Updated documentation
+
+**Files Modified:**
+- `utils/data_processor.py` - Added Column D extraction
+- `utils/metrics.py` - Added recharge_count to all calculations
+- `app.py` - Added Recharge Count KPI and to all tables
+- `pages/1_Overview.py` - Added to KPIs and tables
+- `README.md` - Updated metrics and column list
+- `PROJECT_SUMMARY.md` - Updated metrics and column list
+
+---
+
 ## Technical Details
 
 ### Dashboard Structure
@@ -110,6 +130,7 @@ telesales-dashboard/
 ### Key Metrics Displayed
 | Metric | Display Name | Description |
 |--------|--------------|-------------|
+| recharge_count | Recharge Count | Daily recharge count (Column D) |
 | total_calls | Total Calls | Sum of all calls made |
 | answered_calls | Answered Calls | Calls that were answered |
 | not_connected | Not Connected | Calls that didn't connect |
@@ -135,6 +156,7 @@ telesales-dashboard/
 4. `Fix daily trends chart for small date ranges`
 5. `Update README with current project documentation`
 6. `Remove team type from all files`
+7. `Add recharge count metric from Column D`
 
 ---
 

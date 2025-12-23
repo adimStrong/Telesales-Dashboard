@@ -107,18 +107,19 @@ if df.empty:
 st.markdown("### Key Metrics Summary")
 kpis = calculate_kpis(df)
 
-# Row 1: 5 KPIs
-col1, col2, col3, col4, col5 = st.columns(5)
+# Row 1: 4 KPIs
+col1, col2, col3, col4 = st.columns(4)
 col1.metric("Active Agents", format_number(kpis["active_agents"]))
-col2.metric("Total Calls", format_number(kpis["total_calls"]))
-col3.metric("Answered Calls", format_number(kpis["answered_calls"]))
-col4.metric("Not Connected", format_number(kpis["not_connected"]))
-col5.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
+col2.metric("Recharge Count", format_number(kpis["recharge_count"]))
+col3.metric("Total Calls", format_number(kpis["total_calls"]))
+col4.metric("Answered Calls", format_number(kpis["answered_calls"]))
 
-# Row 2: 2 KPIs
-col1, col2 = st.columns(2)
-col1.metric("People Recalled", format_number(kpis["people_recalled"]))
-col2.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
+# Row 2: 4 KPIs
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Not Connected", format_number(kpis["not_connected"]))
+col2.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
+col3.metric("People Recalled", format_number(kpis["people_recalled"]))
+col4.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
 
 st.markdown("---")
 
@@ -279,6 +280,8 @@ if not daily_metrics.empty:
     with st.expander("View Daily Data"):
         display_daily = daily_metrics.copy()
         display_daily["date"] = display_daily["date"].dt.strftime("%Y-%m-%d")
+        if "recharge_count" in display_daily.columns:
+            display_daily["recharge_count"] = display_daily["recharge_count"].apply(lambda x: f"{x:,}")
         display_daily["total_calls"] = display_daily["total_calls"].apply(lambda x: f"{x:,}")
         display_daily["answered_calls"] = display_daily["answered_calls"].apply(lambda x: f"{x:,}")
         display_daily["not_connected"] = display_daily["not_connected"].apply(lambda x: f"{x:,}")
@@ -286,9 +289,10 @@ if not daily_metrics.empty:
         display_daily["connection_rate"] = display_daily["connection_rate"].apply(lambda x: f"{x:.1f}%")
         display_daily["conversion_rate_recalled"] = display_daily["conversion_rate_recalled"].apply(lambda x: f"{x:.1f}%")
 
-        display_cols = ["date", "total_calls", "answered_calls", "not_connected", "people_recalled", "connection_rate", "conversion_rate_recalled"]
+        display_cols = ["date", "recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled", "connection_rate", "conversion_rate_recalled"]
+        display_cols = [c for c in display_cols if c in display_daily.columns]
         display_daily = display_daily[display_cols].sort_values("date", ascending=False)
-        display_daily.columns = ["Date", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
+        display_daily.columns = ["Date", "Recharge", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
 
         st.dataframe(display_daily, use_container_width=True, hide_index=True)
 else:
@@ -302,6 +306,8 @@ if not team_metrics.empty:
     display_metrics = team_metrics.copy()
 
     # Format columns
+    if "recharge_count" in display_metrics.columns:
+        display_metrics["recharge_count"] = display_metrics["recharge_count"].apply(lambda x: f"{x:,}")
     if "total_calls" in display_metrics.columns:
         display_metrics["total_calls"] = display_metrics["total_calls"].apply(lambda x: f"{x:,}")
     if "answered_calls" in display_metrics.columns:
@@ -316,7 +322,7 @@ if not team_metrics.empty:
         display_metrics["conversion_rate_recalled"] = display_metrics["conversion_rate_recalled"].apply(lambda x: f"{x:.1f}%")
 
     # Select and rename columns for display
-    display_cols = ["team", "team_leader", "active_agents", "total_calls", "answered_calls", "not_connected", "people_recalled", "connection_rate", "conversion_rate_recalled"]
+    display_cols = ["team", "team_leader", "active_agents", "recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled", "connection_rate", "conversion_rate_recalled"]
     display_cols = [c for c in display_cols if c in display_metrics.columns]
     display_metrics = display_metrics[display_cols]
 
@@ -324,6 +330,7 @@ if not team_metrics.empty:
         "team": "Team",
         "team_leader": "TL",
         "active_agents": "Agents",
+        "recharge_count": "Recharge",
         "total_calls": "Total Calls",
         "answered_calls": "Answered",
         "not_connected": "Not Connected",
