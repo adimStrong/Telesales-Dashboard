@@ -39,8 +39,14 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Header
-st.markdown('<h1 class="main-header">Agent Scorecard</h1>', unsafe_allow_html=True)
+# Header with Logo
+header_col1, header_col2 = st.columns([1, 5])
+with header_col1:
+    logo_path = "assets/logo.jpg"
+    if os.path.exists(logo_path):
+        st.image(logo_path, width=100)
+with header_col2:
+    st.markdown('<h1 class="main-header">Agent Scorecard</h1>', unsafe_allow_html=True)
 
 # Load data
 with st.spinner("Loading data..."):
