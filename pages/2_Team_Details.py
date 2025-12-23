@@ -115,12 +115,19 @@ st.markdown(f"### {selected_team} - TL: {team_leader}")
 # Team KPIs
 kpis = calculate_kpis(team_df)
 
-col1, col2, col3, col4, col5 = st.columns(5)
+# Row 1: 4 KPIs
+col1, col2, col3, col4 = st.columns(4)
 col1.metric("Agents", format_number(kpis["active_agents"]))
-col2.metric("Total Calls", format_number(kpis["total_calls"]))
-col3.metric("Answered", format_number(kpis["answered_calls"]))
-col4.metric("Recalled", format_number(kpis["people_recalled"]))
-col5.metric("Recall Conv", format_percentage(kpis["conversion_rate_recalled"]))
+col2.metric("Recharge Count", format_number(kpis["recharge_count"]))
+col3.metric("Total Calls", format_number(kpis["total_calls"]))
+col4.metric("Answered", format_number(kpis["answered_calls"]))
+
+# Row 2: 4 KPIs
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Not Connected", format_number(kpis["not_connected"]))
+col2.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
+col3.metric("Recalled", format_number(kpis["people_recalled"]))
+col4.metric("Recall Conv", format_percentage(kpis["conversion_rate_recalled"]))
 
 st.markdown("---")
 
@@ -128,12 +135,15 @@ st.markdown("---")
 st.markdown("### Team Daily Performance")
 
 # Daily metrics for this team
-team_daily = team_df.groupby("date").agg({
+agg_dict = {
     "total_calls": "sum",
     "answered_calls": "sum",
     "not_connected": "sum",
     "people_recalled": "sum"
-}).reset_index().sort_values("date")
+}
+if "recharge_count" in team_df.columns:
+    agg_dict["recharge_count"] = "sum"
+team_daily = team_df.groupby("date").agg(agg_dict).reset_index().sort_values("date")
 
 if not team_daily.empty:
     # Add rates
@@ -201,6 +211,26 @@ if not team_daily.empty:
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    # Recharge Count Chart
+    if "recharge_count" in team_daily.columns:
+        st.markdown("##### Daily Recharge Count")
+        fig = px.bar(
+            team_daily,
+            x="date",
+            y="recharge_count",
+            color="recharge_count",
+            color_continuous_scale="Oranges",
+            labels={"recharge_count": "Recharge Count", "date": "Date"}
+        )
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Recharge Count",
+            height=300,
+            coloraxis_showscale=False
+        )
+        fig.update_traces(texttemplate="%{y:,.0f}", textposition="outside")
+        st.plotly_chart(fig, use_container_width=True)
+
 st.markdown("---")
 
 # Agent Breakdown within Team
@@ -258,6 +288,8 @@ if not agent_metrics.empty:
     # Agent details table
     st.markdown("##### All Agents in Team")
     display_agents = agent_metrics.copy()
+    if "recharge_count" in display_agents.columns:
+        display_agents["recharge_count"] = display_agents["recharge_count"].apply(lambda x: f"{x:,}")
     display_agents["total_calls"] = display_agents["total_calls"].apply(lambda x: f"{x:,}")
     display_agents["answered_calls"] = display_agents["answered_calls"].apply(lambda x: f"{x:,}")
     display_agents["not_connected"] = display_agents["not_connected"].apply(lambda x: f"{x:,}")
@@ -265,9 +297,14 @@ if not agent_metrics.empty:
     display_agents["connection_rate"] = display_agents["connection_rate"].apply(lambda x: f"{x:.1f}%")
     display_agents["conversion_rate_recalled"] = display_agents["conversion_rate_recalled"].apply(lambda x: f"{x:.1f}%")
 
-    display_cols = ["agent_name", "total_calls", "answered_calls", "not_connected", "people_recalled", "connection_rate", "conversion_rate_recalled"]
+    display_cols = ["agent_name", "recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled", "connection_rate", "conversion_rate_recalled"]
+    display_cols = [c for c in display_cols if c in display_agents.columns]
     display_agents = display_agents[display_cols]
-    display_agents.columns = ["Agent", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
+
+    col_names = ["Agent", "Recharge", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
+    if "recharge_count" not in agent_metrics.columns:
+        col_names.remove("Recharge")
+    display_agents.columns = col_names
 
     st.dataframe(display_agents, use_container_width=True, hide_index=True)
 
@@ -330,6 +367,8 @@ if not team_metrics.empty:
     team_metrics["conv_rank"] = team_metrics["conversion_rate_recalled"].rank(ascending=False, method="min").astype(int)
 
     display_team = team_metrics.copy()
+    if "recharge_count" in display_team.columns:
+        display_team["recharge_count"] = display_team["recharge_count"].apply(lambda x: f"{x:,}")
     display_team["total_calls"] = display_team["total_calls"].apply(lambda x: f"{x:,}")
     display_team["answered_calls"] = display_team["answered_calls"].apply(lambda x: f"{x:,}")
     display_team["people_recalled"] = display_team["people_recalled"].apply(lambda x: f"{x:,}")
@@ -338,7 +377,7 @@ if not team_metrics.empty:
     display_team["calls_rank"] = display_team["calls_rank"].apply(lambda x: f"#{x}")
     display_team["conv_rank"] = display_team["conv_rank"].apply(lambda x: f"#{x}")
 
-    display_cols = ["team", "team_leader", "active_agents", "total_calls", "calls_rank", "answered_calls", "people_recalled", "conversion_rate_recalled", "conv_rank"]
+    display_cols = ["team", "team_leader", "active_agents", "recharge_count", "total_calls", "calls_rank", "answered_calls", "people_recalled", "conversion_rate_recalled", "conv_rank"]
     display_cols = [c for c in display_cols if c in display_team.columns]
     display_team = display_team[display_cols].sort_values("team")
 
@@ -346,6 +385,7 @@ if not team_metrics.empty:
         "team": "Team",
         "team_leader": "TL",
         "active_agents": "Agents",
+        "recharge_count": "Recharge",
         "total_calls": "Total Calls",
         "calls_rank": "Calls Rank",
         "answered_calls": "Answered",
@@ -382,30 +422,42 @@ if not team_daily.empty and len(team_daily) >= 7:
         week1_answered = week1_df["answered_calls"].sum()
         week2_answered = week2_df["answered_calls"].sum()
 
+        # Recharge count
+        week1_recharge = week1_df["recharge_count"].sum() if "recharge_count" in week1_df.columns else 0
+        week2_recharge = week2_df["recharge_count"].sum() if "recharge_count" in week2_df.columns else 0
+
         week1_conv = (week1_recalled / week1_answered * 100) if week1_answered > 0 else 0
         week2_conv = (week2_recalled / week2_answered * 100) if week2_answered > 0 else 0
 
         calls_delta = ((week1_calls - week2_calls) / week2_calls * 100) if week2_calls > 0 else 0
         recalled_delta = ((week1_recalled - week2_recalled) / week2_recalled * 100) if week2_recalled > 0 else 0
+        recharge_delta = ((week1_recharge - week2_recharge) / week2_recharge * 100) if week2_recharge > 0 else 0
         conv_delta = week1_conv - week2_conv
 
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
 
         with col1:
+            st.metric(
+                "Recharge (This Week)",
+                f"{week1_recharge:,}",
+                delta=f"{recharge_delta:+.1f}% vs last week"
+            )
+
+        with col2:
             st.metric(
                 "Total Calls (This Week)",
                 f"{week1_calls:,}",
                 delta=f"{calls_delta:+.1f}% vs last week"
             )
 
-        with col2:
+        with col3:
             st.metric(
                 "People Recalled (This Week)",
                 f"{week1_recalled:,}",
                 delta=f"{recalled_delta:+.1f}% vs last week"
             )
 
-        with col3:
+        with col4:
             st.metric(
                 "Recall Conv % (This Week)",
                 f"{week1_conv:.1f}%",

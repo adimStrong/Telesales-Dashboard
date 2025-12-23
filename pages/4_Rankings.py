@@ -87,8 +87,9 @@ with st.sidebar:
     st.subheader("Ranking Options")
     ranking_metric = st.selectbox(
         "Rank By",
-        ["total_calls", "answered_calls", "people_recalled", "conversion_rate_recalled"],
+        ["recharge_count", "total_calls", "answered_calls", "people_recalled", "conversion_rate_recalled"],
         format_func=lambda x: {
+            "recharge_count": "Recharge Count",
             "total_calls": "Total Calls",
             "answered_calls": "Answered Calls",
             "people_recalled": "People Recalled",
@@ -118,6 +119,7 @@ with tab1:
     if not top_agents.empty:
         # Leaderboard visualization
         metric_display = {
+            "recharge_count": "Recharge Count",
             "total_calls": "Total Calls",
             "answered_calls": "Answered Calls",
             "people_recalled": "People Recalled",
@@ -176,6 +178,8 @@ with tab1:
         display_df.insert(0, "", medals[:len(display_df)])
 
         # Format columns
+        if "recharge_count" in display_df.columns:
+            display_df["recharge_count"] = display_df["recharge_count"].apply(lambda x: f"{x:,}")
         if "total_calls" in display_df.columns:
             display_df["total_calls"] = display_df["total_calls"].apply(lambda x: f"{x:,}")
         if "answered_calls" in display_df.columns:
@@ -193,12 +197,13 @@ with tab1:
         display_cols = ["", "Rank", "agent_name"]
         if "team" in display_df.columns:
             display_cols.append("team")
-        display_cols.extend(["total_calls", "answered_calls", "people_recalled", "conversion_rate_recalled"])
+        display_cols.extend(["recharge_count", "total_calls", "answered_calls", "people_recalled", "conversion_rate_recalled"])
         display_cols = [c for c in display_cols if c in display_df.columns]
 
         col_names = {
             "agent_name": "Agent",
             "team": "Team",
+            "recharge_count": "Recharge",
             "total_calls": "Total Calls",
             "answered_calls": "Answered",
             "people_recalled": "Recalled",
@@ -219,6 +224,26 @@ with tab2:
     team_comparison = calculate_team_comparison(df)
 
     if not team_comparison.empty:
+        # Recharge Count by Team Chart
+        if "recharge_count" in team_comparison.columns:
+            st.markdown("##### Teams by Recharge Count")
+            fig = px.bar(
+                team_comparison.sort_values("recharge_count", ascending=True),
+                x="recharge_count",
+                y="team",
+                orientation="h",
+                color="recharge_count",
+                color_continuous_scale="Oranges",
+                labels={"recharge_count": "Recharge Count", "team": "Team"}
+            )
+            fig.update_layout(
+                showlegend=False,
+                height=400,
+                coloraxis_showscale=False
+            )
+            fig.update_traces(texttemplate="%{x:,.0f}", textposition="outside")
+            st.plotly_chart(fig, use_container_width=True)
+
         # Team ranking charts
         col1, col2 = st.columns(2)
 
@@ -271,6 +296,8 @@ with tab2:
             display_team[col] = display_team[col].apply(lambda x: f"#{int(x)}")
 
         # Format metrics
+        if "recharge_count" in display_team.columns:
+            display_team["recharge_count"] = display_team["recharge_count"].apply(lambda x: f"{x:,}")
         if "total_calls" in display_team.columns:
             display_team["total_calls"] = display_team["total_calls"].apply(lambda x: f"{x:,}")
         if "answered_calls" in display_team.columns:
@@ -283,7 +310,7 @@ with tab2:
             display_team["conversion_rate_recalled"] = display_team["conversion_rate_recalled"].apply(lambda x: f"{x:.1f}%")
 
         # Select and rename columns
-        display_cols = ["team", "team_leader", "active_agents", "total_calls", "answered_calls", "people_recalled", "conversion_rate_recalled"]
+        display_cols = ["team", "team_leader", "active_agents", "recharge_count", "total_calls", "answered_calls", "people_recalled", "conversion_rate_recalled"]
         display_cols.extend([c for c in rank_cols if c in display_team.columns])
         display_cols = [c for c in display_cols if c in display_team.columns]
 
@@ -291,6 +318,7 @@ with tab2:
             "team": "Team",
             "team_leader": "TL",
             "active_agents": "Agents",
+            "recharge_count": "Recharge",
             "total_calls": "Total Calls",
             "answered_calls": "Answered",
             "people_recalled": "Recalled",
@@ -330,9 +358,9 @@ with tab3:
             team2_kpis = calculate_kpis(team2_df)
 
             # Comparison metrics
-            metrics = ["total_calls", "answered_calls", "not_connected",
+            metrics = ["recharge_count", "total_calls", "answered_calls", "not_connected",
                        "people_recalled", "connection_rate", "conversion_rate_recalled"]
-            metric_labels = ["Total Calls", "Answered", "Not Connected",
+            metric_labels = ["Recharge", "Total Calls", "Answered", "Not Connected",
                              "Recalled", "Connection %", "Recall Conv %"]
 
             comparison_data = {
@@ -384,6 +412,7 @@ with tab3:
 
             with col1:
                 st.markdown(f"### {team1}")
+                st.metric("Recharge", format_number(team1_kpis["recharge_count"]))
                 st.metric("Total Calls", format_number(team1_kpis["total_calls"]))
                 st.metric("Answered", format_number(team1_kpis["answered_calls"]))
                 st.metric("Recalled", format_number(team1_kpis["people_recalled"]))
@@ -394,10 +423,12 @@ with tab3:
                 st.markdown("---")
 
                 # Determine winners
+                recharge_winner = team1 if team1_kpis["recharge_count"] > team2_kpis["recharge_count"] else team2
                 calls_winner = team1 if team1_kpis["total_calls"] > team2_kpis["total_calls"] else team2
                 recalled_winner = team1 if team1_kpis["people_recalled"] > team2_kpis["people_recalled"] else team2
                 conv_winner = team1 if team1_kpis["conversion_rate_recalled"] > team2_kpis["conversion_rate_recalled"] else team2
 
+                st.markdown(f"<h4 style='text-align:center'>🔋 {recharge_winner} leads in Recharge</h4>", unsafe_allow_html=True)
                 st.markdown(f"<h4 style='text-align:center'>📞 {calls_winner} leads in Total Calls</h4>", unsafe_allow_html=True)
                 st.markdown(f"<h4 style='text-align:center'>🔄 {recalled_winner} leads in People Recalled</h4>", unsafe_allow_html=True)
                 st.markdown(f"<h4 style='text-align:center'>📈 {conv_winner} has higher Recall Conv %</h4>", unsafe_allow_html=True)
@@ -406,6 +437,7 @@ with tab3:
 
             with col3:
                 st.markdown(f"### {team2}")
+                st.metric("Recharge", format_number(team2_kpis["recharge_count"]))
                 st.metric("Total Calls", format_number(team2_kpis["total_calls"]))
                 st.metric("Answered", format_number(team2_kpis["answered_calls"]))
                 st.metric("Recalled", format_number(team2_kpis["people_recalled"]))

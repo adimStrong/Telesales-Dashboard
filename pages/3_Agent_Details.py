@@ -124,12 +124,19 @@ st.markdown("---")
 st.markdown("### Performance Summary")
 agent_kpis = calculate_kpis(agent_df)
 
-col1, col2, col3, col4, col5 = st.columns(5)
-col1.metric("Total Calls", format_number(agent_kpis["total_calls"]))
-col2.metric("Answered", format_number(agent_kpis["answered_calls"]))
-col3.metric("Not Connected", format_number(agent_kpis["not_connected"]))
-col4.metric("Recalled", format_number(agent_kpis["people_recalled"]))
-col5.metric("Recall Conv", format_percentage(agent_kpis["conversion_rate_recalled"]))
+# Row 1: 4 KPIs
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Recharge Count", format_number(agent_kpis["recharge_count"]))
+col2.metric("Total Calls", format_number(agent_kpis["total_calls"]))
+col3.metric("Answered", format_number(agent_kpis["answered_calls"]))
+col4.metric("Not Connected", format_number(agent_kpis["not_connected"]))
+
+# Row 2: 4 KPIs
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Connection Rate", format_percentage(agent_kpis["connection_rate"]))
+col2.metric("Recalled", format_number(agent_kpis["people_recalled"]))
+col3.metric("Recall Conv", format_percentage(agent_kpis["conversion_rate_recalled"]))
+col4.metric("", "")
 
 st.markdown("---")
 
@@ -137,12 +144,15 @@ st.markdown("---")
 st.markdown("### Daily Performance")
 
 # Daily metrics for this agent
-agent_daily = agent_df.groupby("date").agg({
+agg_dict = {
     "total_calls": "sum",
     "answered_calls": "sum",
     "not_connected": "sum",
     "people_recalled": "sum"
-}).reset_index().sort_values("date")
+}
+if "recharge_count" in agent_df.columns:
+    agg_dict["recharge_count"] = "sum"
+agent_daily = agent_df.groupby("date").agg(agg_dict).reset_index().sort_values("date")
 
 if not agent_daily.empty:
     # Add rates
@@ -201,6 +211,26 @@ if not agent_daily.empty:
         )
         st.plotly_chart(fig, use_container_width=True)
 
+    # Recharge Count Chart
+    if "recharge_count" in agent_daily.columns:
+        st.markdown("##### Daily Recharge Count")
+        fig = px.bar(
+            agent_daily,
+            x="date",
+            y="recharge_count",
+            color="recharge_count",
+            color_continuous_scale="Oranges",
+            labels={"recharge_count": "Recharge Count", "date": "Date"}
+        )
+        fig.update_layout(
+            xaxis_title="Date",
+            yaxis_title="Recharge Count",
+            height=300,
+            coloraxis_showscale=False
+        )
+        fig.update_traces(texttemplate="%{y:,.0f}", textposition="outside")
+        st.plotly_chart(fig, use_container_width=True)
+
 st.markdown("---")
 
 # Compare with Team Average
@@ -213,21 +243,34 @@ team_agent_count = team_df["agent_name"].nunique() if "agent_name" in team_df.co
 team_total_calls = team_df["total_calls"].sum()
 team_answered = team_df["answered_calls"].sum()
 team_recalled = team_df["people_recalled"].sum()
+team_recharge = team_df["recharge_count"].sum() if "recharge_count" in team_df.columns else 0
 
 team_avg_calls = team_total_calls / team_agent_count if team_agent_count > 0 else 0
 team_avg_answered = team_answered / team_agent_count if team_agent_count > 0 else 0
 team_avg_recalled = team_recalled / team_agent_count if team_agent_count > 0 else 0
+team_avg_recharge = team_recharge / team_agent_count if team_agent_count > 0 else 0
 team_conv_rate = (team_recalled / team_answered * 100) if team_answered > 0 else 0
 
 # Agent totals
 agent_total_calls = agent_kpis["total_calls"]
 agent_answered = agent_kpis["answered_calls"]
 agent_recalled = agent_kpis["people_recalled"]
+agent_recharge = agent_kpis["recharge_count"]
 agent_conv_rate = agent_kpis["conversion_rate_recalled"]
 
+# Row 1
 col1, col2, col3, col4 = st.columns(4)
 
 with col1:
+    diff = agent_recharge - team_avg_recharge
+    diff_pct = (diff / team_avg_recharge * 100) if team_avg_recharge > 0 else 0
+    st.metric(
+        "Recharge vs Team Avg",
+        format_number(agent_recharge),
+        delta=f"{diff_pct:+.1f}%"
+    )
+
+with col2:
     diff = agent_total_calls - team_avg_calls
     diff_pct = (diff / team_avg_calls * 100) if team_avg_calls > 0 else 0
     st.metric(
@@ -236,7 +279,7 @@ with col1:
         delta=f"{diff_pct:+.1f}%"
     )
 
-with col2:
+with col3:
     diff = agent_answered - team_avg_answered
     diff_pct = (diff / team_avg_answered * 100) if team_avg_answered > 0 else 0
     st.metric(
@@ -245,7 +288,7 @@ with col2:
         delta=f"{diff_pct:+.1f}%"
     )
 
-with col3:
+with col4:
     diff = agent_recalled - team_avg_recalled
     diff_pct = (diff / team_avg_recalled * 100) if team_avg_recalled > 0 else 0
     st.metric(
@@ -254,7 +297,10 @@ with col3:
         delta=f"{diff_pct:+.1f}%"
     )
 
-with col4:
+# Row 2
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
     diff = agent_conv_rate - team_conv_rate
     st.metric(
         "Recall Conv vs Team Avg",
@@ -316,6 +362,8 @@ all_agent_metrics = calculate_agent_metrics(df)
 
 if not all_agent_metrics.empty:
     # Overall rankings
+    if "recharge_count" in all_agent_metrics.columns:
+        all_agent_metrics["recharge_rank"] = all_agent_metrics["recharge_count"].rank(ascending=False, method="min").astype(int)
     all_agent_metrics["calls_rank"] = all_agent_metrics["total_calls"].rank(ascending=False, method="min").astype(int)
     all_agent_metrics["answered_rank"] = all_agent_metrics["answered_calls"].rank(ascending=False, method="min").astype(int)
     all_agent_metrics["recalled_rank"] = all_agent_metrics["people_recalled"].rank(ascending=False, method="min").astype(int)
@@ -327,9 +375,21 @@ if not all_agent_metrics.empty:
     if not agent_row.empty:
         total_agents = len(all_agent_metrics)
 
+        # Row 1: 4 rankings
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
+            if "recharge_rank" in agent_row.columns:
+                rank = int(agent_row["recharge_rank"].iloc[0])
+                st.markdown(f"""
+                <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #FF6B35, #e55a25); border-radius: 10px; color: white;">
+                    <h3>#{rank}</h3>
+                    <p>Recharge Count</p>
+                    <small>of {total_agents} agents</small>
+                </div>
+                """, unsafe_allow_html=True)
+
+        with col2:
             rank = int(agent_row["calls_rank"].iloc[0])
             st.markdown(f"""
             <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #3498db, #2980b9); border-radius: 10px; color: white;">
@@ -339,7 +399,7 @@ if not all_agent_metrics.empty:
             </div>
             """, unsafe_allow_html=True)
 
-        with col2:
+        with col3:
             rank = int(agent_row["answered_rank"].iloc[0])
             st.markdown(f"""
             <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #27ae60, #229954); border-radius: 10px; color: white;">
@@ -349,7 +409,7 @@ if not all_agent_metrics.empty:
             </div>
             """, unsafe_allow_html=True)
 
-        with col3:
+        with col4:
             rank = int(agent_row["recalled_rank"].iloc[0])
             st.markdown(f"""
             <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #9b59b6, #8e44ad); border-radius: 10px; color: white;">
@@ -359,7 +419,9 @@ if not all_agent_metrics.empty:
             </div>
             """, unsafe_allow_html=True)
 
-        with col4:
+        # Row 2: Conversion rank
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
             rank = int(agent_row["conv_rank"].iloc[0])
             st.markdown(f"""
             <div style="text-align: center; padding: 1rem; background: linear-gradient(135deg, #e74c3c, #c0392b); border-radius: 10px; color: white;">
@@ -399,6 +461,8 @@ with st.expander("View Daily Activity Log"):
     if not agent_daily.empty:
         display_log = agent_daily.copy()
         display_log["date"] = display_log["date"].dt.strftime("%Y-%m-%d")
+        if "recharge_count" in display_log.columns:
+            display_log["recharge_count"] = display_log["recharge_count"].apply(lambda x: f"{x:,}")
         display_log["total_calls"] = display_log["total_calls"].apply(lambda x: f"{x:,}")
         display_log["answered_calls"] = display_log["answered_calls"].apply(lambda x: f"{x:,}")
         display_log["not_connected"] = display_log["not_connected"].apply(lambda x: f"{x:,}")
@@ -406,8 +470,13 @@ with st.expander("View Daily Activity Log"):
         display_log["connection_rate"] = display_log["connection_rate"].apply(lambda x: f"{x:.1f}%")
         display_log["conversion_rate_recalled"] = display_log["conversion_rate_recalled"].apply(lambda x: f"{x:.1f}%")
 
-        display_cols = ["date", "total_calls", "answered_calls", "not_connected", "people_recalled", "connection_rate", "conversion_rate_recalled"]
+        display_cols = ["date", "recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled", "connection_rate", "conversion_rate_recalled"]
+        display_cols = [c for c in display_cols if c in display_log.columns]
         display_log = display_log[display_cols].sort_values("date", ascending=False)
-        display_log.columns = ["Date", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
+
+        col_names = ["Date", "Recharge", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
+        if "recharge_count" not in agent_daily.columns:
+            col_names.remove("Recharge")
+        display_log.columns = col_names
 
         st.dataframe(display_log, use_container_width=True, hide_index=True)
