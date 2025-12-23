@@ -38,13 +38,17 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Header with Logo
-header_col1, header_col2 = st.columns([1, 5])
-with header_col1:
-    logo_path = "assets/logo.jpg"
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=100)
-with header_col2:
+# Header with Logo - Centered
+logo_path = "assets/logo.jpg"
+if os.path.exists(logo_path):
+    col1, col2, col3 = st.columns([2, 3, 2])
+    with col2:
+        img_col, text_col = st.columns([1, 4])
+        with img_col:
+            st.image(logo_path, width=80)
+        with text_col:
+            st.markdown('<h1 class="main-header">Leaderboard & Rankings</h1>', unsafe_allow_html=True)
+else:
     st.markdown('<h1 class="main-header">Leaderboard & Rankings</h1>', unsafe_allow_html=True)
 
 # Load data
