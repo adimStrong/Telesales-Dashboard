@@ -1,118 +1,190 @@
-# JUAN365 Telesales Real-Time Dashboard
+# JUAN365 Telesales Dashboard
 
-A real-time telesales performance dashboard built with Streamlit and Google Sheets API.
+A real-time telesales performance dashboard built with Streamlit, powered by Google Sheets API.
+
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![Plotly](https://img.shields.io/badge/Plotly-3F4F75?style=flat&logo=plotly&logoColor=white)
+
+## Live Demo
+
+**[View Dashboard](https://telesales-dashboard-kt6pdumn58ewaqgpxcxpht.streamlit.app/)**
+
+---
 
 ## Features
 
-- **Real-time data** from Google Sheets with 5-minute auto-refresh
-- **6 KPI Cards**: Recharge Count, Answered Calls, Conversion Rate, People Recalled, Answer Rate, Total Deposit
-- **Multi-page dashboard**:
-  - Overview: Team performance charts and daily trends
-  - Team Details: Deep dive into individual team performance
-  - Agent Details: Individual agent performance analysis
-  - Rankings: Leaderboards and team comparisons
-- **Filters**: Date range, Team, Agent
-- **Visualizations**: Bar charts, line charts, radar charts
-- **CSV Export**: Download filtered data
+- **Real-time Data** - Live connection to Google Sheets with auto-refresh
+- **7 Key Metrics** - Active Agents, Total Calls, Answered, Not Connected, Connection Rate, People Recalled, Recall Conv %
+- **Multi-page Dashboard** - 5 interactive pages for different views
+- **Smart Filtering** - Date range, team, and agent filters
+- **Interactive Charts** - Plotly visualizations with hover details
+- **CSV Export** - Download data for offline analysis
+- **Responsive Design** - Works on desktop and mobile
 
-## Setup
+---
 
-### 1. Install Dependencies
+## Dashboard Pages
 
+| Page | Description |
+|------|-------------|
+| **Main (app.py)** | KPIs, team overview, monthly/daily breakdowns |
+| **Overview** | Trend charts, team performance comparison |
+| **Team Details** | Individual team analysis, agent breakdown |
+| **Agent Scorecard** | Agent performance, rankings, team comparison |
+| **Leaderboard** | Top performers, team rankings, team vs team |
+
+---
+
+## Key Metrics
+
+| Metric | Description | Formula |
+|--------|-------------|---------|
+| Active Agents | Unique agents in period | COUNT(DISTINCT agent_name) |
+| Total Calls | All calls made | SUM(total_calls) |
+| Answered Calls | Connected calls | SUM(answered_calls) |
+| Not Connected | Failed connections | SUM(not_connected) |
+| Connection Rate | Answer rate | answered / total * 100 |
+| People Recalled | Callbacks received | SUM(people_recalled) |
+| Recall Conv % | Callback conversion | recalled / answered * 100 |
+
+---
+
+## Quick Start
+
+### 1. Clone Repository
+```bash
+git clone https://github.com/adimStrong/Telesales-Dashboard.git
+cd telesales-dashboard
+```
+
+### 2. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Google Sheets Access
-
-The credentials are pre-configured in `.streamlit/secrets.toml`.
-
-Make sure the Google Sheet is shared with the service account email:
-```
-juan365-reporter@juan365-reporter.iam.gserviceaccount.com
-```
-
-### 3. Update Column Mapping
-
-Edit `utils/data_processor.py` to map your actual column names:
-
-```python
-COLUMN_MAPPING = {
-    "date": "YOUR_DATE_COLUMN",
-    "agent_name": "YOUR_AGENT_COLUMN",
-    "recharge_count": "YOUR_RECHARGE_COLUMN",
-    "answered_calls": "YOUR_ANSWERED_CALLS_COLUMN",
-    "total_calls": "YOUR_TOTAL_CALLS_COLUMN",
-    "people_recalled": "YOUR_RECALLED_COLUMN",
-    "total_deposit": "YOUR_DEPOSIT_COLUMN",
-}
+### 3. Configure Secrets
+Create `.streamlit/secrets.toml`:
+```toml
+[gcp_service_account]
+type = "service_account"
+project_id = "your-project-id"
+private_key_id = "your-key-id"
+private_key = "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+client_email = "your-service-account@project.iam.gserviceaccount.com"
+client_id = "123456789"
+auth_uri = "https://accounts.google.com/o/oauth2/auth"
+token_uri = "https://oauth2.googleapis.com/token"
 ```
 
-### 4. Run the Dashboard
-
+### 4. Run Dashboard
 ```bash
 streamlit run app.py
 ```
 
-Or with custom port:
-
-```bash
-streamlit run app.py --server.port 8502
-```
+---
 
 ## Project Structure
 
 ```
 telesales-dashboard/
-├── .streamlit/
-│   ├── config.toml          # Streamlit theme config
-│   └── secrets.toml          # Google Sheets credentials
-├── utils/
-│   ├── __init__.py
-│   ├── google_sheets.py      # Google Sheets API integration
-│   ├── data_processor.py     # Data standardization
-│   └── metrics.py            # KPI calculations
-├── pages/
-│   ├── 1_Overview.py         # Performance overview
-│   ├── 2_Team_Details.py     # Team analysis
-│   ├── 3_Agent_Details.py    # Agent analysis
-│   └── 4_Rankings.py         # Leaderboards
 ├── app.py                    # Main dashboard
+├── pages/
+│   ├── 1_Overview.py         # KPI trends & team charts
+│   ├── 2_Team_Details.py     # Team deep dive
+│   ├── 3_Agent_Details.py    # Agent scorecard
+│   └── 4_Rankings.py         # Leaderboard
+├── utils/
+│   ├── google_sheets.py      # Google Sheets API
+│   ├── data_processor.py     # Data processing
+│   └── metrics.py            # KPI calculations
+├── assets/
+│   └── logo.jpg              # Company logo
+├── .streamlit/
+│   ├── config.toml           # Theme config
+│   └── secrets.toml          # Credentials (gitignored)
 ├── requirements.txt
-├── .gitignore
-└── README.md
+├── CHANGELOG.md              # Recent changes
+├── PROJECT_SUMMARY.md        # Detailed docs
+└── README.md                 # This file
 ```
 
-## Team Sheets (11 Total)
+---
 
-| Sheet Name | Team | Team Leader | Type |
-|------------|------|-------------|------|
-| TL MIKE TEAM A | TEAM A | MIKE | RETENTION |
-| TL PEARL TEAM B | TEAM B | PEARL | RETENTION |
-| TL DEXTER TEAM C | TEAM C | DEXTER | RECALL |
-| TL BOB TEAM D | TEAM D | BOB | RECALL |
-| TL ONI TEAM E | TEAM E | ONI | RECALL |
-| TL TRINA TEAM F | TEAM F | TRINA | RECALL |
-| TL MIRRA TEAM G | TEAM G | MIRRA | VIP |
-| TL JAYE TEAM H | TEAM H | JAYE | VIP |
-| TL WINSON TEAM I | TEAM I | WINSON | VIP |
-| TL ANDRE TEAM J | TEAM J | ANDRE | VIP |
-| TL NICOLE TEAM K | TEAM K | NICOLE | VIP |
+## Data Source
 
-## KPI Definitions
+### Google Sheets Structure
+Data is extracted by column position:
 
-| KPI | Description | Formula |
-|-----|-------------|---------|
-| Recharge Count | Total successful recharges | SUM(recharge_count) |
-| Answered Calls | Total answered calls | SUM(answered_calls) |
-| Conversion Rate | Recharges per answered call | recharge_count / answered_calls * 100 |
-| People Recalled | Total people recalled | SUM(people_recalled) |
-| Answer Rate | Calls answered vs total | answered_calls / total_calls * 100 |
-| Total Deposit | Total deposits in PHP | SUM(total_deposit) |
+| Column | Data |
+|--------|------|
+| A | Date |
+| B | Agent Name |
+| H | Total Calls |
+| L | Not Connected |
+| T | Answered Calls |
+| U | People Recalled |
 
-## Currency
+### Team Sheets (11 Teams)
 
-All monetary values are displayed in Philippine Peso (₱).
+| Team | Leader | Type |
+|------|--------|------|
+| TEAM A | MIKE | RETENTION |
+| TEAM B | PEARL | RETENTION |
+| TEAM C | DEXTER | RECALL |
+| TEAM D | BOB | RECALL |
+| TEAM E | ONI | RECALL |
+| TEAM F | TRINA | RECALL |
+| TEAM G | MIRRA | VIP |
+| TEAM H | JAYE | VIP |
+| TEAM I | WINSON | VIP |
+| TEAM J | ANDRE | VIP |
+| TEAM K | NICOLE | VIP |
+
+---
+
+## Deployment
+
+### Streamlit Cloud
+1. Push to GitHub
+2. Connect repo on [share.streamlit.io](https://share.streamlit.io)
+3. Add secrets in dashboard settings
+4. Deploy automatically on push
+
+### Current Stats
+- **Records:** 8,383
+- **Agents:** 234-251
+- **Teams:** 11
+- **Date Range:** Nov 2 - Dec 22, 2025
+
+---
+
+## Recent Updates
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed changes.
+
+**Latest (Dec 23, 2025):**
+- Centered logo with page title
+- Removed redundant metrics
+- Smart daily trends (auto-expands for small date ranges)
+
+---
+
+## Tech Stack
+
+- **Frontend:** Streamlit
+- **Charts:** Plotly
+- **Data:** Google Sheets API
+- **Auth:** GCP Service Account
+- **Hosting:** Streamlit Cloud
+
+---
+
+## License
+
+JUAN365 Philippines - Internal Use
+
+---
 
 ## Support
 
