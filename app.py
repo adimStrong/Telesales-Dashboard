@@ -296,14 +296,16 @@ def main():
 
                 with st.expander(month_label):
                     # Daily breakdown for this month
-                    daily_df = month_df.groupby("date").agg({
+                    agg_dict = {
                         "agent_name": "nunique",
-                        "recharge_count": "sum",
                         "total_calls": "sum",
                         "answered_calls": "sum",
                         "not_connected": "sum",
                         "people_recalled": "sum"
-                    }).reset_index()
+                    }
+                    if "recharge_count" in month_df.columns:
+                        agg_dict["recharge_count"] = "sum"
+                    daily_df = month_df.groupby("date").agg(agg_dict).reset_index()
 
                     # Calculate conversion rates
                     daily_df["Connection Rate"] = daily_df.apply(
@@ -320,14 +322,18 @@ def main():
 
                     # Format numbers with commas
                     daily_df["Agents"] = daily_df["agent_name"]
-                    daily_df["Recharge"] = daily_df["recharge_count"].apply(lambda x: f"{x:,}")
+                    if "recharge_count" in daily_df.columns:
+                        daily_df["Recharge"] = daily_df["recharge_count"].apply(lambda x: f"{x:,}")
                     daily_df["Total Calls"] = daily_df["total_calls"].apply(lambda x: f"{x:,}")
                     daily_df["Answered"] = daily_df["answered_calls"].apply(lambda x: f"{x:,}")
                     daily_df["Not Conn"] = daily_df["not_connected"].apply(lambda x: f"{x:,}")
                     daily_df["Recalled"] = daily_df["people_recalled"].apply(lambda x: f"{x:,}")
 
                     # Select display columns and sort by date
-                    display_daily = daily_df[["Date", "Agents", "Recharge", "Total Calls", "Answered", "Not Conn", "Recalled", "Connection Rate", "Recall Conv %"]]
+                    display_cols = ["Date", "Agents", "Total Calls", "Answered", "Not Conn", "Recalled", "Connection Rate", "Recall Conv %"]
+                    if "Recharge" in daily_df.columns:
+                        display_cols.insert(2, "Recharge")
+                    display_daily = daily_df[display_cols]
                     display_daily = display_daily.sort_values("Date", ascending=False)
 
                     st.dataframe(display_daily, use_container_width=True, hide_index=True)
@@ -354,13 +360,15 @@ def main():
 
             with st.expander(team_label):
                 # Agent breakdown for this team
-                agent_df = team_df.groupby("agent_name").agg({
-                    "recharge_count": "sum",
+                agg_dict = {
                     "total_calls": "sum",
                     "answered_calls": "sum",
                     "not_connected": "sum",
                     "people_recalled": "sum"
-                }).reset_index()
+                }
+                if "recharge_count" in team_df.columns:
+                    agg_dict["recharge_count"] = "sum"
+                agent_df = team_df.groupby("agent_name").agg(agg_dict).reset_index()
 
                 # Calculate conversion rates
                 agent_df["Conn Rate"] = agent_df.apply(
@@ -374,7 +382,8 @@ def main():
 
                 # Format numbers with commas
                 agent_df["Agent"] = agent_df["agent_name"]
-                agent_df["Recharge"] = agent_df["recharge_count"].apply(lambda x: f"{x:,}")
+                if "recharge_count" in agent_df.columns:
+                    agent_df["Recharge"] = agent_df["recharge_count"].apply(lambda x: f"{x:,}")
                 agent_df["Total Calls"] = agent_df["total_calls"].apply(lambda x: f"{x:,}")
                 agent_df["Answered"] = agent_df["answered_calls"].apply(lambda x: f"{x:,}")
                 agent_df["Not Conn"] = agent_df["not_connected"].apply(lambda x: f"{x:,}")
@@ -383,7 +392,10 @@ def main():
                 # Sort by total calls descending
                 agent_df = agent_df.sort_values("total_calls", ascending=False)
 
-                display_agent = agent_df[["Agent", "Recharge", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]]
+                display_cols = ["Agent", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]
+                if "Recharge" in agent_df.columns:
+                    display_cols.insert(1, "Recharge")
+                display_agent = agent_df[display_cols]
                 st.dataframe(display_agent, use_container_width=True, hide_index=True)
 
     # By Agent Section (All agents)
@@ -392,13 +404,15 @@ def main():
 
     with st.expander(f"📋 All {df['agent_name'].nunique()} Agents"):
         # All agents breakdown
-        all_agents_df = df.groupby(["agent_name", "_team"]).agg({
-            "recharge_count": "sum",
+        agg_dict = {
             "total_calls": "sum",
             "answered_calls": "sum",
             "not_connected": "sum",
             "people_recalled": "sum"
-        }).reset_index()
+        }
+        if "recharge_count" in df.columns:
+            agg_dict["recharge_count"] = "sum"
+        all_agents_df = df.groupby(["agent_name", "_team"]).agg(agg_dict).reset_index()
 
         # Calculate conversion rates
         all_agents_df["Conn Rate"] = all_agents_df.apply(
@@ -413,7 +427,8 @@ def main():
         # Format numbers with commas
         all_agents_df["Agent"] = all_agents_df["agent_name"]
         all_agents_df["Team"] = all_agents_df["_team"]
-        all_agents_df["Recharge"] = all_agents_df["recharge_count"].apply(lambda x: f"{x:,}")
+        if "recharge_count" in all_agents_df.columns:
+            all_agents_df["Recharge"] = all_agents_df["recharge_count"].apply(lambda x: f"{x:,}")
         all_agents_df["Total Calls"] = all_agents_df["total_calls"].apply(lambda x: f"{x:,}")
         all_agents_df["Answered"] = all_agents_df["answered_calls"].apply(lambda x: f"{x:,}")
         all_agents_df["Not Conn"] = all_agents_df["not_connected"].apply(lambda x: f"{x:,}")
@@ -422,7 +437,10 @@ def main():
         # Sort by total calls descending
         all_agents_df = all_agents_df.sort_values("total_calls", ascending=False)
 
-        display_all = all_agents_df[["Agent", "Team", "Recharge", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]]
+        display_cols = ["Agent", "Team", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]
+        if "Recharge" in all_agents_df.columns:
+            display_cols.insert(2, "Recharge")
+        display_all = all_agents_df[display_cols]
         st.dataframe(display_all, use_container_width=True, hide_index=True)
 
     # Footer
