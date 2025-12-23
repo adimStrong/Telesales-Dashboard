@@ -6,7 +6,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from utils.google_sheets import load_all_sheets_data, refresh_data
 from utils.data_processor import filter_by_date_range, filter_by_team, get_unique_dates
@@ -57,6 +57,10 @@ if df.empty:
     st.warning("No data available.")
     st.stop()
 
+# Store original data for trends chart
+df_original = df.copy()
+selected_date_range = None
+
 # Sidebar filters
 with st.sidebar:
     st.header("Filters")
@@ -77,15 +81,17 @@ with st.sidebar:
             max_value=max_date.date()
         )
         if len(date_range) == 2:
+            selected_date_range = date_range
             df = filter_by_date_range(df, date_range[0], date_range[1])
 
     st.markdown("---")
 
     # Team filter
-    all_teams = sorted(df["_team"].unique().tolist()) if "_team" in df.columns else []
+    all_teams = sorted(df_original["_team"].unique().tolist()) if "_team" in df_original.columns else []
     selected_teams = st.multiselect("Teams", all_teams, default=all_teams)
     if selected_teams:
         df = filter_by_team(df, selected_teams)
+        df_original = filter_by_team(df_original, selected_teams)
 
     st.markdown("---")
     st.caption(f"Records: {len(df):,}")
@@ -175,7 +181,22 @@ st.markdown("---")
 
 # Daily Trends
 st.markdown("### Daily Trends")
-daily_metrics = calculate_daily_metrics(df)
+
+# If date range is less than 7 days, use current month or all data for the chart
+df_for_trends = df
+trend_note = ""
+if selected_date_range and len(selected_date_range) == 2:
+    days_diff = (selected_date_range[1] - selected_date_range[0]).days
+    if days_diff < 7:
+        # Use current month data instead
+        current_month_start = selected_date_range[1].replace(day=1)
+        df_for_trends = filter_by_date_range(df_original, current_month_start, selected_date_range[1])
+        trend_note = f"📊 Showing current month data ({current_month_start.strftime('%b %d')} - {selected_date_range[1].strftime('%b %d, %Y')}) for better trend visualization"
+
+if trend_note:
+    st.info(trend_note)
+
+daily_metrics = calculate_daily_metrics(df_for_trends)
 
 if not daily_metrics.empty:
     # Add calculated rates to daily metrics
