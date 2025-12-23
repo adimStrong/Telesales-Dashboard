@@ -108,6 +108,40 @@ This document summarizes all changes made to the JUAN365 Telesales Dashboard dur
 
 ---
 
+### 7. Add Recharge Count to All Pages
+**Request:** Add recharge count metric to Team Details, Agent Details, and Rankings pages with charts
+
+**Changes:**
+
+#### Team Details (2_Team_Details.py)
+- Added Recharge Count to team KPIs (now 2 rows of 4 KPIs)
+- Added Daily Recharge Count bar chart (orange color scheme)
+- Added Recharge column to All Agents in Team table
+- Added Recharge column to Team Rankings table
+- Added Recharge metric to Week-over-Week comparison
+
+#### Agent Details (3_Agent_Details.py)
+- Added Recharge Count to agent KPIs (now 2 rows of 4 KPIs)
+- Added Daily Recharge Count bar chart
+- Added Recharge vs Team Avg comparison metric
+- Added Recharge Count rank card (orange gradient)
+- Added Recharge column to Daily Activity Log table
+
+#### Rankings (4_Rankings.py)
+- Added "Recharge Count" as a ranking option in sidebar
+- Added Recharge column to Top Performers leaderboard table
+- Added "Teams by Recharge Count" bar chart (orange color scheme)
+- Added Recharge column to Team Ranking table
+- Added Recharge to Team vs Team radar chart and comparison
+- Added Recharge winner indicator in Head-to-Head comparison
+
+**Files Modified:**
+- `pages/2_Team_Details.py`
+- `pages/3_Agent_Details.py`
+- `pages/4_Rankings.py`
+
+---
+
 ## Technical Details
 
 ### Dashboard Structure
@@ -157,6 +191,7 @@ telesales-dashboard/
 5. `Update README with current project documentation`
 6. `Remove team type from all files`
 7. `Add recharge count metric from Column D`
+8. `Add recharge_count metric to all remaining pages`
 
 ---
 
