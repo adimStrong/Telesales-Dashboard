@@ -87,7 +87,7 @@ with st.sidebar:
     st.subheader("Ranking Options")
     ranking_metric = st.selectbox(
         "Rank By",
-        ["recharge_count", "total_calls", "answered_calls", "people_recalled", "conversion_rate_recalled"],
+        ["people_recalled", "recharge_count", "total_calls", "answered_calls", "conversion_rate_recalled"],
         format_func=lambda x: {
             "recharge_count": "Recharge Count",
             "total_calls": "Total Calls",
@@ -203,7 +203,7 @@ with tab1:
         col_names = {
             "agent_name": "Agent",
             "team": "Team",
-            "recharge_count": "Recharge",
+            "recharge_count": "Recharge Count",
             "total_calls": "Total Calls",
             "answered_calls": "Answered",
             "people_recalled": "Recalled",
@@ -318,7 +318,7 @@ with tab2:
             "team": "Team",
             "team_leader": "TL",
             "active_agents": "Agents",
-            "recharge_count": "Recharge",
+            "recharge_count": "Recharge Count",
             "total_calls": "Total Calls",
             "answered_calls": "Answered",
             "people_recalled": "Recalled",
@@ -360,7 +360,7 @@ with tab3:
             # Comparison metrics
             metrics = ["recharge_count", "total_calls", "answered_calls", "not_connected",
                        "people_recalled", "connection_rate", "conversion_rate_recalled"]
-            metric_labels = ["Recharge", "Total Calls", "Answered", "Not Connected",
+            metric_labels = ["Recharge Count", "Total Calls", "Answered", "Not Connected",
                              "Recalled", "Connection %", "Recall Conv %"]
 
             comparison_data = {
@@ -412,7 +412,7 @@ with tab3:
 
             with col1:
                 st.markdown(f"### {team1}")
-                st.metric("Recharge", format_number(team1_kpis["recharge_count"]))
+                st.metric("Recharge Count", format_number(team1_kpis["recharge_count"]))
                 st.metric("Total Calls", format_number(team1_kpis["total_calls"]))
                 st.metric("Answered", format_number(team1_kpis["answered_calls"]))
                 st.metric("Recalled", format_number(team1_kpis["people_recalled"]))
@@ -428,7 +428,7 @@ with tab3:
                 recalled_winner = team1 if team1_kpis["people_recalled"] > team2_kpis["people_recalled"] else team2
                 conv_winner = team1 if team1_kpis["conversion_rate_recalled"] > team2_kpis["conversion_rate_recalled"] else team2
 
-                st.markdown(f"<h4 style='text-align:center'>🔋 {recharge_winner} leads in Recharge</h4>", unsafe_allow_html=True)
+                st.markdown(f"<h4 style='text-align:center'>🔋 {recharge_winner} leads in Recharge Count</h4>", unsafe_allow_html=True)
                 st.markdown(f"<h4 style='text-align:center'>📞 {calls_winner} leads in Total Calls</h4>", unsafe_allow_html=True)
                 st.markdown(f"<h4 style='text-align:center'>🔄 {recalled_winner} leads in People Recalled</h4>", unsafe_allow_html=True)
                 st.markdown(f"<h4 style='text-align:center'>📈 {conv_winner} has higher Recall Conv %</h4>", unsafe_allow_html=True)
@@ -437,7 +437,7 @@ with tab3:
 
             with col3:
                 st.markdown(f"### {team2}")
-                st.metric("Recharge", format_number(team2_kpis["recharge_count"]))
+                st.metric("Recharge Count", format_number(team2_kpis["recharge_count"]))
                 st.metric("Total Calls", format_number(team2_kpis["total_calls"]))
                 st.metric("Answered", format_number(team2_kpis["answered_calls"]))
                 st.metric("Recalled", format_number(team2_kpis["people_recalled"]))

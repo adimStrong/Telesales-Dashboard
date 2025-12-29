@@ -301,9 +301,9 @@ if not agent_metrics.empty:
     display_cols = [c for c in display_cols if c in display_agents.columns]
     display_agents = display_agents[display_cols]
 
-    col_names = ["Agent", "Recharge", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
+    col_names = ["Agent", "Recharge Count", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
     if "recharge_count" not in agent_metrics.columns:
-        col_names.remove("Recharge")
+        col_names.remove("Recharge Count")
     display_agents.columns = col_names
 
     st.dataframe(display_agents, use_container_width=True, hide_index=True)
@@ -385,7 +385,7 @@ if not team_metrics.empty:
         "team": "Team",
         "team_leader": "TL",
         "active_agents": "Agents",
-        "recharge_count": "Recharge",
+        "recharge_count": "Recharge Count",
         "total_calls": "Total Calls",
         "calls_rank": "Calls Rank",
         "answered_calls": "Answered",
@@ -438,7 +438,7 @@ if not team_daily.empty and len(team_daily) >= 7:
 
         with col1:
             st.metric(
-                "Recharge (This Week)",
+                "Recharge Count (This Week)",
                 f"{week1_recharge:,}",
                 delta=f"{recharge_delta:+.1f}% vs last week"
             )

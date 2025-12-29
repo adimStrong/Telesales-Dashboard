@@ -265,7 +265,7 @@ with col1:
     diff = agent_recharge - team_avg_recharge
     diff_pct = (diff / team_avg_recharge * 100) if team_avg_recharge > 0 else 0
     st.metric(
-        "Recharge vs Team Avg",
+        "Recharge Count vs Team Avg",
         format_number(agent_recharge),
         delta=f"{diff_pct:+.1f}%"
     )
@@ -474,9 +474,9 @@ with st.expander("View Daily Activity Log"):
         display_cols = [c for c in display_cols if c in display_log.columns]
         display_log = display_log[display_cols].sort_values("date", ascending=False)
 
-        col_names = ["Date", "Recharge", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
+        col_names = ["Date", "Recharge Count", "Total Calls", "Answered", "Not Connected", "Recalled", "Conn Rate", "Recall Conv"]
         if "recharge_count" not in agent_daily.columns:
-            col_names.remove("Recharge")
+            col_names.remove("Recharge Count")
         display_log.columns = col_names
 
         st.dataframe(display_log, use_container_width=True, hide_index=True)
