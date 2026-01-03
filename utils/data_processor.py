@@ -68,7 +68,8 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
     # Parse date column
     # =========================================================================
     if "date" in df.columns:
-        current_year = datetime.now().year
+        # Use 2025 for short date formats (dates without year like "11/2")
+        current_year = 2025
 
         def parse_date(date_str):
             if pd.isna(date_str) or not date_str:
