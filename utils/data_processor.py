@@ -63,39 +63,45 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
     df = df.dropna(how='all')
 
     # =========================================================================
-    # Parse date column
+    # Parse date column - ALL dates converted to 2025
     # =========================================================================
     if "date" in df.columns:
-        # Use 2025 for short date formats (dates without year like "11/2")
-        current_year = 2025
-
         def parse_date(date_str):
             if pd.isna(date_str) or not date_str:
                 return pd.NaT
 
             date_str = str(date_str).strip()
+            parsed_date = None
 
             # Try full date formats first
             for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%m-%d-%Y"]:
                 try:
-                    return pd.to_datetime(date_str, format=fmt)
+                    parsed_date = pd.to_datetime(date_str, format=fmt)
+                    break
                 except:
                     pass
 
-            # Try short format (month/day) - assume current year
-            try:
-                parts = date_str.split("/")
-                if len(parts) == 2:
-                    month, day = int(parts[0]), int(parts[1])
-                    return pd.Timestamp(year=current_year, month=month, day=day)
-            except:
-                pass
+            # Try short format (month/day)
+            if parsed_date is None:
+                try:
+                    parts = date_str.split("/")
+                    if len(parts) == 2:
+                        month, day = int(parts[0]), int(parts[1])
+                        parsed_date = pd.Timestamp(year=2025, month=month, day=day)
+                except:
+                    pass
 
             # Fallback to pandas default
-            try:
-                return pd.to_datetime(date_str, errors="coerce")
-            except:
-                return pd.NaT
+            if parsed_date is None:
+                try:
+                    parsed_date = pd.to_datetime(date_str, errors="coerce")
+                except:
+                    return pd.NaT
+
+            # Force ALL dates to 2025
+            if parsed_date is not None and not pd.isna(parsed_date):
+                return parsed_date.replace(year=2025)
+            return pd.NaT
 
         df["date"] = df["date"].apply(parse_date)
 
