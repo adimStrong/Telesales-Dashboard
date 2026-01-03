@@ -9,7 +9,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import time
 
-# Sheet configuration - All 11 TL sheets
+# Sheet configuration - All 12 TL sheets
 SHEET_CONFIG = {
     "TL MIKE TEAM A": {"team": "TEAM A", "tl": "MIKE"},
     "TL PEARL TEAM B": {"team": "TEAM B", "tl": "PEARL"},
@@ -22,6 +22,7 @@ SHEET_CONFIG = {
     "TL WINSON TEAM I": {"team": "TEAM I", "tl": "WINSON"},
     "TL ANDRE TEAM J": {"team": "TEAM J", "tl": "ANDRE"},
     "TL NICOLE TEAM K": {"team": "TEAM K", "tl": "NICOLE"},
+    "TL RUBY TEAM L": {"team": "TEAM L", "tl": "RUBY"},
 }
 
 # FOR TESTING: Only load one sheet (set to False to load all 11 sheets)
