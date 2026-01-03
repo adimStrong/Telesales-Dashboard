@@ -216,7 +216,13 @@ def main():
 
         # Data info
         st.subheader("Data Info")
-        st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        # Show data date range instead of system time
+        if "date" in df.columns and not df["date"].isna().all():
+            data_min = df["date"].min().strftime('%Y-%m-%d')
+            data_max = df["date"].max().strftime('%Y-%m-%d')
+            st.caption(f"Data range: {data_min} to {data_max}")
+        else:
+            st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         st.caption(f"Total records: {len(df):,}")
         st.caption(f"Teams: {df['_team'].nunique() if '_team' in df.columns else 0}")
         # Count unique agents (by full name)
