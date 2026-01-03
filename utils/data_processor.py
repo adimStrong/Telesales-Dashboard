@@ -20,8 +20,7 @@ COLUMN_POSITIONS = {
     "people_recalled": 20,  # Column U (data shows: 19)
 }
 
-# Minimum date filter - show all 2025 data (2026 to be added later)
-MIN_DATE_FILTER = datetime(2025, 1, 1)
+# No date filter - show all data that exists in sheets
 
 
 
@@ -123,12 +122,6 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
         # Remove empty agent names
         df = df[df["agent_name"] != ""]
         df = df[df["agent_name"] != "nan"]
-
-    # =========================================================================
-    # Filter to only include dates from November 2024 onwards
-    # =========================================================================
-    if "date" in df.columns:
-        df = df[df["date"] >= MIN_DATE_FILTER]
 
     # All agents with data are considered present
     df["is_present"] = True
