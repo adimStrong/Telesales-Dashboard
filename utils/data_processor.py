@@ -20,9 +20,8 @@ COLUMN_POSITIONS = {
     "people_recalled": 20,  # Column U (data shows: 19)
 }
 
-# Minimum date filter - only load data from November onwards
-# Dates like "11/2" are parsed with current year (2025)
-MIN_DATE_FILTER = datetime(2025, 11, 1)
+# Minimum date filter - show all 2025 data (2026 to be added later)
+MIN_DATE_FILTER = datetime(2025, 1, 1)
 
 
 
