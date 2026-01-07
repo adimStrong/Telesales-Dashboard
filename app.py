@@ -7,7 +7,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 
-from utils.google_sheets import load_all_sheets_data, refresh_data, get_team_list
+from utils.google_sheets import load_all_sheets_data, refresh_data, get_team_list, get_all_tl_names
 from utils.data_processor import (
     filter_by_date_range, filter_by_team,
     filter_by_agent, get_unique_agents, get_unique_dates
@@ -96,8 +96,8 @@ def render_kpi_cards(kpis: dict):
             value=format_number(kpis["answered_calls"]),
         )
 
-    # Row 2: 4 more KPIs
-    col1, col2, col3, col4 = st.columns(4)
+    # Row 2: 5 more KPIs
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         st.metric(
@@ -118,6 +118,12 @@ def render_kpi_cards(kpis: dict):
         )
 
     with col4:
+        st.metric(
+            label="Friend Added",
+            value=format_number(kpis["friend_added"]),
+        )
+
+    with col5:
         st.metric(
             label="Recall Conv %",
             value=format_percentage(kpis["conversion_rate_recalled"]),
@@ -141,6 +147,11 @@ def main():
 
         st.markdown("---")
 
+        # Year filter
+        st.subheader("Year Filter")
+        year_options = ["Both", "2025", "2026"]
+        selected_year = st.selectbox("Select Year", options=year_options, index=0, key="year_filter")
+
     # Header with Logo - Centered
     logo_path = "assets/logo.jpg"
     if os.path.exists(logo_path):
@@ -154,9 +165,14 @@ def main():
     else:
         st.markdown('<h1 class="main-header">JUAN365 Telesales Dashboard</h1>', unsafe_allow_html=True)
 
-    # Load data
+    # Load data based on year selection
     with st.spinner("Loading data from Google Sheets..."):
-        df = load_all_sheets_data()
+        if selected_year == "2025":
+            df = load_all_sheets_data(years=[2025])
+        elif selected_year == "2026":
+            df = load_all_sheets_data(years=[2026])
+        else:
+            df = load_all_sheets_data(years=[2025, 2026])
 
     if df.empty:
         st.warning("No data available. Please check your Google Sheets connection and sheet names.")
@@ -196,6 +212,21 @@ def main():
         )
         if selected_teams:
             df = filter_by_team(df, selected_teams)
+
+        st.markdown("---")
+
+        # TL (Team Leader) filter
+        st.subheader("Team Leader Filter")
+        all_tls = sorted(df["_team_leader"].unique().tolist()) if "_team_leader" in df.columns else []
+        selected_tls = st.multiselect(
+            "Select Team Leaders",
+            options=all_tls,
+            default=[],
+            key="tl_filter",
+            placeholder="All TLs"
+        )
+        if selected_tls:
+            df = df[df["_team_leader"].isin(selected_tls)]
 
         st.markdown("---")
 
@@ -258,6 +289,7 @@ def main():
                 answered = int(team_df["answered_calls"].sum()) if "answered_calls" in team_df.columns else 0
                 not_conn = int(team_df["not_connected"].sum()) if "not_connected" in team_df.columns else 0
                 recalled = int(team_df["people_recalled"].sum()) if "people_recalled" in team_df.columns else 0
+                friend_add = int(team_df["friend_added"].sum()) if "friend_added" in team_df.columns else 0
                 # Calculate conversion rate
                 conv_rate = round((recalled / answered * 100), 1) if answered > 0 else 0
                 team_data.append({
@@ -269,6 +301,7 @@ def main():
                     "Answered": f"{answered:,}",
                     "Not Connected": f"{not_conn:,}",
                     "Recalled": f"{recalled:,}",
+                    "Friend Added": f"{friend_add:,}",
                     "Recall Conv %": f"{conv_rate}%",
                 })
             team_summary = pd.DataFrame(team_data)
@@ -294,11 +327,12 @@ def main():
                 m_calls = month_df["total_calls"].sum()
                 m_answered = month_df["answered_calls"].sum()
                 m_recalled = month_df["people_recalled"].sum()
+                m_friend_add = month_df["friend_added"].sum() if "friend_added" in month_df.columns else 0
                 m_conv_call = round(m_answered / m_calls * 100, 1) if m_calls > 0 else 0
                 m_conv_recall = round(m_recalled / m_answered * 100, 1) if m_answered > 0 else 0
 
                 # Month header with summary
-                month_label = f"📅 {month} | Agents: {m_agents} | Recharge: {m_recharge:,} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Conn Rate: {m_conv_call}% | Recall Conv: {m_conv_recall}%"
+                month_label = f"📅 {month} | Agents: {m_agents} | Recharge: {m_recharge:,} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Friend+: {m_friend_add:,} | Conn: {m_conv_call}%"
 
                 with st.expander(month_label):
                     # Daily breakdown for this month
@@ -311,6 +345,8 @@ def main():
                     }
                     if "recharge_count" in month_df.columns:
                         agg_dict["recharge_count"] = "sum"
+                    if "friend_added" in month_df.columns:
+                        agg_dict["friend_added"] = "sum"
                     daily_df = month_df.groupby("date").agg(agg_dict).reset_index()
 
                     # Calculate conversion rates
@@ -334,11 +370,15 @@ def main():
                     daily_df["Answered"] = daily_df["answered_calls"].apply(lambda x: f"{x:,}")
                     daily_df["Not Conn"] = daily_df["not_connected"].apply(lambda x: f"{x:,}")
                     daily_df["Recalled"] = daily_df["people_recalled"].apply(lambda x: f"{x:,}")
+                    if "friend_added" in daily_df.columns:
+                        daily_df["Friend Added"] = daily_df["friend_added"].apply(lambda x: f"{x:,}")
 
                     # Select display columns and sort by date
                     display_cols = ["Date", "Agents", "Total Calls", "Answered", "Not Conn", "Recalled", "Connection Rate", "Recall Conv %"]
                     if "Recharge" in daily_df.columns:
                         display_cols.insert(2, "Recharge")
+                    if "Friend Added" in daily_df.columns:
+                        display_cols.insert(-2, "Friend Added")
                     display_daily = daily_df[display_cols]
                     display_daily = display_daily.sort_values("Date", ascending=False)
 
@@ -358,11 +398,12 @@ def main():
             t_calls = team_df["total_calls"].sum()
             t_answered = team_df["answered_calls"].sum()
             t_recalled = team_df["people_recalled"].sum()
+            t_friend_add = team_df["friend_added"].sum() if "friend_added" in team_df.columns else 0
             t_conv_call = round(t_answered / t_calls * 100, 1) if t_calls > 0 else 0
             t_conv_recall = round(t_recalled / t_answered * 100, 1) if t_answered > 0 else 0
             t_tl = team_df["_team_leader"].iloc[0] if "_team_leader" in team_df.columns else "-"
 
-            team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Recharge: {t_recharge:,} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Conn Rate: {t_conv_call}% | Recall Conv: {t_conv_recall}%"
+            team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Recharge: {t_recharge:,} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Friend+: {t_friend_add:,} | Conn: {t_conv_call}%"
 
             with st.expander(team_label):
                 # Agent breakdown for this team
@@ -374,6 +415,8 @@ def main():
                 }
                 if "recharge_count" in team_df.columns:
                     agg_dict["recharge_count"] = "sum"
+                if "friend_added" in team_df.columns:
+                    agg_dict["friend_added"] = "sum"
                 agent_df = team_df.groupby("agent_name").agg(agg_dict).reset_index()
 
                 # Calculate conversion rates
@@ -394,6 +437,8 @@ def main():
                 agent_df["Answered"] = agent_df["answered_calls"].apply(lambda x: f"{x:,}")
                 agent_df["Not Conn"] = agent_df["not_connected"].apply(lambda x: f"{x:,}")
                 agent_df["Recalled"] = agent_df["people_recalled"].apply(lambda x: f"{x:,}")
+                if "friend_added" in agent_df.columns:
+                    agent_df["Friend Added"] = agent_df["friend_added"].apply(lambda x: f"{x:,}")
 
                 # Sort by total calls descending
                 agent_df = agent_df.sort_values("total_calls", ascending=False)
@@ -401,6 +446,8 @@ def main():
                 display_cols = ["Agent", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]
                 if "Recharge" in agent_df.columns:
                     display_cols.insert(1, "Recharge")
+                if "Friend Added" in agent_df.columns:
+                    display_cols.insert(-2, "Friend Added")
                 display_agent = agent_df[display_cols]
                 st.dataframe(display_agent, use_container_width=True, hide_index=True)
 
@@ -418,6 +465,8 @@ def main():
         }
         if "recharge_count" in df.columns:
             agg_dict["recharge_count"] = "sum"
+        if "friend_added" in df.columns:
+            agg_dict["friend_added"] = "sum"
         all_agents_df = df.groupby(["agent_name", "_team"]).agg(agg_dict).reset_index()
 
         # Calculate conversion rates
@@ -439,6 +488,8 @@ def main():
         all_agents_df["Answered"] = all_agents_df["answered_calls"].apply(lambda x: f"{x:,}")
         all_agents_df["Not Conn"] = all_agents_df["not_connected"].apply(lambda x: f"{x:,}")
         all_agents_df["Recalled"] = all_agents_df["people_recalled"].apply(lambda x: f"{x:,}")
+        if "friend_added" in all_agents_df.columns:
+            all_agents_df["Friend Added"] = all_agents_df["friend_added"].apply(lambda x: f"{x:,}")
 
         # Sort by total calls descending
         all_agents_df = all_agents_df.sort_values("total_calls", ascending=False)
@@ -446,6 +497,8 @@ def main():
         display_cols = ["Agent", "Team", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]
         if "Recharge" in all_agents_df.columns:
             display_cols.insert(2, "Recharge")
+        if "Friend Added" in all_agents_df.columns:
+            display_cols.insert(-2, "Friend Added")
         display_all = all_agents_df[display_cols]
         st.dataframe(display_all, use_container_width=True, hide_index=True)
 

@@ -7,9 +7,11 @@ import numpy as np
 from datetime import datetime
 
 # =============================================================================
-# COLUMN POSITIONS (0-indexed) - Based on ACTUAL DATA in November
+# COLUMN POSITIONS (0-indexed) - Based on ACTUAL DATA
 # Headers don't match data positions - using user's original mapping
 # =============================================================================
+
+# 2025 Column Positions
 COLUMN_POSITIONS = {
     "date": 0,              # Column A
     "agent_name": 1,        # Column B
@@ -20,24 +22,40 @@ COLUMN_POSITIONS = {
     "people_recalled": 20,  # Column U (data shows: 19)
 }
 
+# 2026 Column Positions (different structure)
+COLUMN_POSITIONS_2026 = {
+    "date": 0,              # Column A
+    "agent_name": 1,        # Column B
+    "recharge_count": 3,    # Column D
+    "total_calls": 5,       # Column F
+    "not_connected": 6,     # Column G
+    "friend_added": 8,      # Column I (NEW FIELD in 2026)
+    "answered_calls": 9,    # Column J
+    "people_recalled": 10,  # Column K
+}
+
 # No date filter - show all data that exists in sheets
 
 
 
 
-def standardize_data(raw_values: list) -> pd.DataFrame:
+def standardize_data(raw_values: list, year: int = 2025) -> pd.DataFrame:
     """
     Extract data by column position and standardize types.
 
     Args:
         raw_values: List of lists from worksheet.get_all_values()
                    First row is headers, subsequent rows are data
+        year: Data year (2025 or 2026) - determines column positions
 
     Returns:
         Standardized DataFrame with only the columns we need
     """
     if not raw_values or len(raw_values) < 2:
         return pd.DataFrame()
+
+    # Select column positions based on year
+    col_positions = COLUMN_POSITIONS_2026 if year == 2026 else COLUMN_POSITIONS
 
     # Skip header row, extract data rows only
     data_rows = raw_values[1:]
@@ -51,7 +69,7 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
 
         # Extract only the columns we need by position
         record = {}
-        for field, col_idx in COLUMN_POSITIONS.items():
+        for field, col_idx in col_positions.items():
             record[field] = row[col_idx] if col_idx < len(row) else ''
 
         data.append(record)
@@ -63,10 +81,10 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
     df = df.dropna(how='all')
 
     # =========================================================================
-    # Parse date column - ALL dates converted to 2025
+    # Parse date column - Use year parameter for proper year assignment
     # =========================================================================
     if "date" in df.columns:
-        def parse_date(date_str):
+        def parse_date(date_str, target_year):
             if pd.isna(date_str) or not date_str:
                 return pd.NaT
 
@@ -87,7 +105,7 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
                     parts = date_str.split("/")
                     if len(parts) == 2:
                         month, day = int(parts[0]), int(parts[1])
-                        parsed_date = pd.Timestamp(year=2025, month=month, day=day)
+                        parsed_date = pd.Timestamp(year=target_year, month=month, day=day)
                 except:
                     pass
 
@@ -98,18 +116,18 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
                 except:
                     return pd.NaT
 
-            # Force ALL dates to 2025
+            # Force dates to target year
             if parsed_date is not None and not pd.isna(parsed_date):
-                return parsed_date.replace(year=2025)
+                return parsed_date.replace(year=target_year)
             return pd.NaT
 
-        df["date"] = df["date"].apply(parse_date)
+        df["date"] = df["date"].apply(lambda x: parse_date(x, year))
 
     # =========================================================================
     # Convert numeric columns
     # =========================================================================
     numeric_cols = [
-        "recharge_count", "total_calls", "not_connected", "answered_calls", "people_recalled"
+        "recharge_count", "total_calls", "not_connected", "answered_calls", "people_recalled", "friend_added"
     ]
 
     for col in numeric_cols:
@@ -119,6 +137,13 @@ def standardize_data(raw_values: list) -> pd.DataFrame:
                 df[col] = df[col].astype(str).str.replace(",", "", regex=False)
                 df[col] = df[col].str.replace(" ", "", regex=False)
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+
+    # Ensure friend_added exists (defaults to 0 for 2025 data)
+    if "friend_added" not in df.columns:
+        df["friend_added"] = 0
+
+    # Add year column
+    df["_year"] = year
 
     # =========================================================================
     # Clean agent_name (trim whitespace)

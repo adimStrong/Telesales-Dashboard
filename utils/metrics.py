@@ -68,14 +68,14 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     """
     Calculate all main KPIs from the dataframe
 
-    KPIs (based on ACTUAL sheet structure - Nov 2024 onwards):
+    KPIs (based on ACTUAL sheet structure):
     - active_agents: Count of unique agents with data in last 7 days
-    - total_calls: SUM of total_calls (Column N - Total No.Calls)
-    - answered_calls: SUM of answered_calls (Column P - Answer Calls)
-    - not_connected: CALCULATED (total_calls - answered_calls)
+    - total_calls: SUM of total_calls
+    - answered_calls: SUM of answered_calls
+    - not_connected: SUM of not_connected
     - connection_rate: CALCULATED (answered_calls / total_calls) * 100
-    - people_recalled: SUM of people_recalled (Column G - No. People Recalled)
-    - social_media_added: SUM of social_media_added (Column U - Social Media Added)
+    - people_recalled: SUM of people_recalled
+    - friend_added: SUM of friend_added (2026 only, 0 for 2025)
     - conversion_rate_calls: CALCULATED (answered_calls / total_calls) * 100
     - conversion_rate_recalled: CALCULATED (people_recalled / answered_calls) * 100
     """
@@ -88,6 +88,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "not_connected": 0,
             "connection_rate": 0.0,
             "people_recalled": 0,
+            "friend_added": 0,
             "conversion_rate_calls": 0.0,
             "conversion_rate_recalled": 0.0,
         }
@@ -101,6 +102,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     answered_calls = int(df["answered_calls"].sum()) if "answered_calls" in df.columns else 0
     not_connected = int(df["not_connected"].sum()) if "not_connected" in df.columns else 0
     people_recalled = int(df["people_recalled"].sum()) if "people_recalled" in df.columns else 0
+    friend_added = int(df["friend_added"].sum()) if "friend_added" in df.columns else 0
 
     # Calculate rates
     connection_rate = (answered_calls / total_calls * 100) if total_calls > 0 else 0.0
@@ -115,6 +117,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         "not_connected": not_connected,
         "connection_rate": round(connection_rate, 2),
         "people_recalled": people_recalled,
+        "friend_added": friend_added,
         "conversion_rate_calls": round(conversion_rate_calls, 2),
         "conversion_rate_recalled": round(conversion_rate_recalled, 2),
     }
@@ -134,6 +137,7 @@ def calculate_team_metrics(df: pd.DataFrame) -> pd.DataFrame:
         "answered_calls": "sum",
         "not_connected": "sum",
         "people_recalled": "sum",
+        "friend_added": "sum",
     }
 
     for col, agg_func in col_mapping.items():
@@ -184,7 +188,7 @@ def calculate_agent_metrics(df: pd.DataFrame) -> pd.DataFrame:
         group_cols.append("_team")
 
     agg_dict = {}
-    for col in ["recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled"]:
+    for col in ["recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled", "friend_added"]:
         if col in df.columns:
             agg_dict[col] = "sum"
 
@@ -220,7 +224,7 @@ def calculate_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
 
     agg_dict = {}
-    for col in ["recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled"]:
+    for col in ["recharge_count", "total_calls", "answered_calls", "not_connected", "people_recalled", "friend_added"]:
         if col in df.columns:
             agg_dict[col] = "sum"
 
