@@ -147,10 +147,15 @@ def main():
 
         st.markdown("---")
 
-        # Year filter
-        st.subheader("Year Filter")
-        year_options = ["Both", "2025", "2026"]
-        selected_year = st.selectbox("Select Year", options=year_options, index=0, key="year_filter")
+        # Year filter (single select to avoid TL confusion across years)
+        st.subheader("Year")
+        selected_year = st.radio(
+            "Select Year",
+            options=["2026", "2025"],
+            index=0,  # Default to 2026 (current year)
+            key="year_filter",
+            horizontal=True
+        )
 
     # Header with Logo - Centered
     logo_path = "assets/logo.jpg"
@@ -165,14 +170,10 @@ def main():
     else:
         st.markdown('<h1 class="main-header">JUAN365 Telesales Dashboard</h1>', unsafe_allow_html=True)
 
-    # Load data based on year selection
-    with st.spinner("Loading data from Google Sheets..."):
-        if selected_year == "2025":
-            df = load_all_sheets_data(years=[2025])
-        elif selected_year == "2026":
-            df = load_all_sheets_data(years=[2026])
-        else:
-            df = load_all_sheets_data(years=[2025, 2026])
+    # Load data based on year selection (single year only)
+    with st.spinner(f"Loading {selected_year} data from Google Sheets..."):
+        year_int = int(selected_year)
+        df = load_all_sheets_data(years=[year_int])
 
     if df.empty:
         st.warning("No data available. Please check your Google Sheets connection and sheet names.")
