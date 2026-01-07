@@ -51,15 +51,7 @@ if os.path.exists(logo_path):
 else:
     st.markdown('<h1 class="main-header">Leaderboard & Rankings</h1>', unsafe_allow_html=True)
 
-# Load data
-with st.spinner("Loading data..."):
-    df = load_all_sheets_data()
-
-if df.empty:
-    st.warning("No data available.")
-    st.stop()
-
-# Sidebar
+# Sidebar filters
 with st.sidebar:
     st.header("Filters")
 
@@ -69,6 +61,29 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # Year filter (single select)
+    st.subheader("Year")
+    selected_year = st.radio(
+        "Select Year",
+        options=["2026", "2025"],
+        index=0,
+        key="year_filter",
+        horizontal=True
+    )
+    year_int = int(selected_year)
+
+    st.markdown("---")
+
+# Load data based on year selection
+with st.spinner(f"Loading {selected_year} data..."):
+    df = load_all_sheets_data(years=[year_int])
+
+if df.empty:
+    st.warning("No data available.")
+    st.stop()
+
+# Sidebar filters continued
+with st.sidebar:
     # Date filter
     min_date, max_date = get_unique_dates(df)
     if min_date and max_date:

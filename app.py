@@ -67,7 +67,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-def render_kpi_cards(kpis: dict):
+def render_kpi_cards(kpis: dict, year: int = 2026):
     """Render the main KPI cards"""
     # Row 1: 4 KPIs
     col1, col2, col3, col4 = st.columns(4)
@@ -96,8 +96,11 @@ def render_kpi_cards(kpis: dict):
             value=format_number(kpis["answered_calls"]),
         )
 
-    # Row 2: 5 more KPIs
-    col1, col2, col3, col4, col5 = st.columns(5)
+    # Row 2: KPIs (Friend Added only shown for 2026)
+    if year == 2026:
+        col1, col2, col3, col4, col5 = st.columns(5)
+    else:
+        col1, col2, col3, col4 = st.columns(4)
 
     with col1:
         st.metric(
@@ -117,17 +120,24 @@ def render_kpi_cards(kpis: dict):
             value=format_number(kpis["people_recalled"]),
         )
 
-    with col4:
-        st.metric(
-            label="Friend Added",
-            value=format_number(kpis["friend_added"]),
-        )
+    if year == 2026:
+        with col4:
+            st.metric(
+                label="Friend Added",
+                value=format_number(kpis["friend_added"]),
+            )
 
-    with col5:
-        st.metric(
-            label="Recall Conv %",
-            value=format_percentage(kpis["conversion_rate_recalled"]),
-        )
+        with col5:
+            st.metric(
+                label="Recall Conv %",
+                value=format_percentage(kpis["conversion_rate_recalled"]),
+            )
+    else:
+        with col4:
+            st.metric(
+                label="Recall Conv %",
+                value=format_percentage(kpis["conversion_rate_recalled"]),
+            )
 
 
 def main():
@@ -269,7 +279,7 @@ def main():
     # Calculate and display KPIs
     st.markdown("### Key Performance Indicators")
     kpis = calculate_kpis(df)
-    render_kpi_cards(kpis)
+    render_kpi_cards(kpis, year=year_int)
 
     st.markdown("---")
 
@@ -293,7 +303,7 @@ def main():
                 friend_add = int(team_df["friend_added"].sum()) if "friend_added" in team_df.columns else 0
                 # Calculate conversion rate
                 conv_rate = round((recalled / answered * 100), 1) if answered > 0 else 0
-                team_data.append({
+                row_data = {
                     "Team": team,
                     "TL": team_df["_team_leader"].iloc[0] if "_team_leader" in team_df.columns else "-",
                     "Agents": agent_count,
@@ -302,9 +312,12 @@ def main():
                     "Answered": f"{answered:,}",
                     "Not Connected": f"{not_conn:,}",
                     "Recalled": f"{recalled:,}",
-                    "Friend Added": f"{friend_add:,}",
-                    "Recall Conv %": f"{conv_rate}%",
-                })
+                }
+                # Only add Friend Added for 2026
+                if year_int == 2026:
+                    row_data["Friend Added"] = f"{friend_add:,}"
+                row_data["Recall Conv %"] = f"{conv_rate}%"
+                team_data.append(row_data)
             team_summary = pd.DataFrame(team_data)
             st.dataframe(team_summary, use_container_width=True, hide_index=True)
 
@@ -332,8 +345,11 @@ def main():
                 m_conv_call = round(m_answered / m_calls * 100, 1) if m_calls > 0 else 0
                 m_conv_recall = round(m_recalled / m_answered * 100, 1) if m_answered > 0 else 0
 
-                # Month header with summary
-                month_label = f"📅 {month} | Agents: {m_agents} | Recharge: {m_recharge:,} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Friend+: {m_friend_add:,} | Conn: {m_conv_call}%"
+                # Month header with summary (Friend Added only for 2026)
+                if year_int == 2026:
+                    month_label = f"📅 {month} | Agents: {m_agents} | Recharge: {m_recharge:,} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Friend+: {m_friend_add:,} | Conn: {m_conv_call}%"
+                else:
+                    month_label = f"📅 {month} | Agents: {m_agents} | Recharge: {m_recharge:,} | Calls: {m_calls:,} | Answered: {m_answered:,} | Recalled: {m_recalled:,} | Conn: {m_conv_call}%"
 
                 with st.expander(month_label):
                     # Daily breakdown for this month
@@ -346,7 +362,7 @@ def main():
                     }
                     if "recharge_count" in month_df.columns:
                         agg_dict["recharge_count"] = "sum"
-                    if "friend_added" in month_df.columns:
+                    if "friend_added" in month_df.columns and year_int == 2026:
                         agg_dict["friend_added"] = "sum"
                     daily_df = month_df.groupby("date").agg(agg_dict).reset_index()
 
@@ -371,14 +387,14 @@ def main():
                     daily_df["Answered"] = daily_df["answered_calls"].apply(lambda x: f"{x:,}")
                     daily_df["Not Conn"] = daily_df["not_connected"].apply(lambda x: f"{x:,}")
                     daily_df["Recalled"] = daily_df["people_recalled"].apply(lambda x: f"{x:,}")
-                    if "friend_added" in daily_df.columns:
+                    if "friend_added" in daily_df.columns and year_int == 2026:
                         daily_df["Friend Added"] = daily_df["friend_added"].apply(lambda x: f"{x:,}")
 
                     # Select display columns and sort by date
                     display_cols = ["Date", "Agents", "Total Calls", "Answered", "Not Conn", "Recalled", "Connection Rate", "Recall Conv %"]
                     if "Recharge" in daily_df.columns:
                         display_cols.insert(2, "Recharge")
-                    if "Friend Added" in daily_df.columns:
+                    if "Friend Added" in daily_df.columns and year_int == 2026:
                         display_cols.insert(-2, "Friend Added")
                     display_daily = daily_df[display_cols]
                     display_daily = display_daily.sort_values("Date", ascending=False)
@@ -404,7 +420,11 @@ def main():
             t_conv_recall = round(t_recalled / t_answered * 100, 1) if t_answered > 0 else 0
             t_tl = team_df["_team_leader"].iloc[0] if "_team_leader" in team_df.columns else "-"
 
-            team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Recharge: {t_recharge:,} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Friend+: {t_friend_add:,} | Conn: {t_conv_call}%"
+            # Team label (Friend Added only for 2026)
+            if year_int == 2026:
+                team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Recharge: {t_recharge:,} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Friend+: {t_friend_add:,} | Conn: {t_conv_call}%"
+            else:
+                team_label = f"👥 {team} (TL: {t_tl}) | Agents: {t_agents} | Recharge: {t_recharge:,} | Calls: {t_calls:,} | Answered: {t_answered:,} | Recalled: {t_recalled:,} | Conn: {t_conv_call}%"
 
             with st.expander(team_label):
                 # Agent breakdown for this team
@@ -416,7 +436,7 @@ def main():
                 }
                 if "recharge_count" in team_df.columns:
                     agg_dict["recharge_count"] = "sum"
-                if "friend_added" in team_df.columns:
+                if "friend_added" in team_df.columns and year_int == 2026:
                     agg_dict["friend_added"] = "sum"
                 agent_df = team_df.groupby("agent_name").agg(agg_dict).reset_index()
 
@@ -438,7 +458,7 @@ def main():
                 agent_df["Answered"] = agent_df["answered_calls"].apply(lambda x: f"{x:,}")
                 agent_df["Not Conn"] = agent_df["not_connected"].apply(lambda x: f"{x:,}")
                 agent_df["Recalled"] = agent_df["people_recalled"].apply(lambda x: f"{x:,}")
-                if "friend_added" in agent_df.columns:
+                if "friend_added" in agent_df.columns and year_int == 2026:
                     agent_df["Friend Added"] = agent_df["friend_added"].apply(lambda x: f"{x:,}")
 
                 # Sort by total calls descending
@@ -447,7 +467,7 @@ def main():
                 display_cols = ["Agent", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]
                 if "Recharge" in agent_df.columns:
                     display_cols.insert(1, "Recharge")
-                if "Friend Added" in agent_df.columns:
+                if "Friend Added" in agent_df.columns and year_int == 2026:
                     display_cols.insert(-2, "Friend Added")
                 display_agent = agent_df[display_cols]
                 st.dataframe(display_agent, use_container_width=True, hide_index=True)
@@ -466,7 +486,7 @@ def main():
         }
         if "recharge_count" in df.columns:
             agg_dict["recharge_count"] = "sum"
-        if "friend_added" in df.columns:
+        if "friend_added" in df.columns and year_int == 2026:
             agg_dict["friend_added"] = "sum"
         all_agents_df = df.groupby(["agent_name", "_team"]).agg(agg_dict).reset_index()
 
@@ -489,7 +509,7 @@ def main():
         all_agents_df["Answered"] = all_agents_df["answered_calls"].apply(lambda x: f"{x:,}")
         all_agents_df["Not Conn"] = all_agents_df["not_connected"].apply(lambda x: f"{x:,}")
         all_agents_df["Recalled"] = all_agents_df["people_recalled"].apply(lambda x: f"{x:,}")
-        if "friend_added" in all_agents_df.columns:
+        if "friend_added" in all_agents_df.columns and year_int == 2026:
             all_agents_df["Friend Added"] = all_agents_df["friend_added"].apply(lambda x: f"{x:,}")
 
         # Sort by total calls descending
@@ -498,7 +518,7 @@ def main():
         display_cols = ["Agent", "Team", "Total Calls", "Answered", "Not Conn", "Recalled", "Conn Rate", "Recall Conv %"]
         if "Recharge" in all_agents_df.columns:
             display_cols.insert(2, "Recharge")
-        if "Friend Added" in all_agents_df.columns:
+        if "Friend Added" in all_agents_df.columns and year_int == 2026:
             display_cols.insert(-2, "Friend Added")
         display_all = all_agents_df[display_cols]
         st.dataframe(display_all, use_container_width=True, hide_index=True)
