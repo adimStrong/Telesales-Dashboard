@@ -46,9 +46,12 @@ FTD_COLUMN_POSITIONS = {
     # Column H (7) - Connection Rate (skip - calculated)
     "social_media_added": 8,  # Column I - Social Media Added
     "answered_calls": 9,    # Column J - Answer Calls
-    "people_recalled": 10,  # Column K - No. People Recalled
+    "ftd_count": 10,        # Column K - No. of FTD (FTD Result)
     # Column L (11) - Conversion Rate (skip - calculated)
 }
+
+# FTD Team Leader (excluded from agent count)
+FTD_TEAM_LEADER = "FTD001 - ANDRE"
 
 # No date filter - show all data that exists in sheets
 
@@ -262,7 +265,7 @@ def standardize_ftd_data(raw_values: list, year: int = 2026) -> pd.DataFrame:
     # =========================================================================
     numeric_cols = [
         "deposit_amount", "recharge_count", "daily_target", "total_calls",
-        "not_connected", "social_media_added", "answered_calls", "people_recalled"
+        "not_connected", "social_media_added", "answered_calls", "ftd_count"
     ]
 
     for col in numeric_cols:
@@ -276,7 +279,7 @@ def standardize_ftd_data(raw_values: list, year: int = 2026) -> pd.DataFrame:
 
     # Convert integer columns
     int_cols = ["recharge_count", "daily_target", "total_calls", "not_connected",
-                "social_media_added", "answered_calls", "people_recalled"]
+                "social_media_added", "answered_calls", "ftd_count"]
     for col in int_cols:
         if col in df.columns:
             df[col] = df[col].astype(int)

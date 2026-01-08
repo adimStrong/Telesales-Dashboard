@@ -309,87 +309,95 @@ def calculate_ftd_kpis(df: pd.DataFrame) -> dict:
     Calculate FTD-specific KPIs from the dataframe
 
     FTD KPIs:
-    - active_agents: Count of unique FTD agents with data in last 7 days
-    - total_deposit_amount: SUM of deposit_amount (peso)
+    - active_agents: Count of unique FTD agents (excluding TL)
     - total_recharge: SUM of recharge_count
+    - total_ftd: SUM of ftd_count (FTD Result)
     - total_calls: SUM of total_calls
     - answered_calls: SUM of answered_calls
     - not_connected: SUM of not_connected
     - social_media_added: SUM of social_media_added
-    - people_recalled: SUM of people_recalled
     - connection_rate: CALCULATED (answered_calls / total_calls) * 100
-    - conversion_rate_recalled: CALCULATED (people_recalled / answered_calls) * 100
-    - avg_deposit_per_agent: total_deposit_amount / active_agents
+    - ftd_conversion_rate: CALCULATED (ftd_count / answered_calls) * 100
     - target_completion: total_recharge / SUM of daily_target * 100
     """
+    from utils.data_processor import FTD_TEAM_LEADER
+
     if df.empty:
         return {
             "active_agents": 0,
-            "total_deposit_amount": 0.0,
             "total_recharge": 0,
+            "total_ftd": 0,
             "total_target": 0,
             "target_completion": 0.0,
             "total_calls": 0,
             "answered_calls": 0,
             "not_connected": 0,
             "social_media_added": 0,
-            "people_recalled": 0,
             "connection_rate": 0.0,
-            "conversion_rate_recalled": 0.0,
-            "avg_deposit_per_agent": 0.0,
+            "ftd_conversion_rate": 0.0,
         }
 
-    # Count unique active agents with records in last 7 days
-    active_agents = get_active_agents_count(df, days=7)
+    # Exclude TL from agent count
+    agents_df = df[df["agent_name"] != FTD_TEAM_LEADER] if "agent_name" in df.columns else df
 
-    # Sum metrics from columns
-    total_deposit_amount = float(df["deposit_amount"].sum()) if "deposit_amount" in df.columns else 0.0
+    # Count unique active agents (excluding TL)
+    if "agent_name" in agents_df.columns:
+        active_agents = agents_df["agent_name"].nunique()
+    else:
+        active_agents = 0
+
+    # Sum metrics from columns (use full df for totals)
     total_recharge = int(df["recharge_count"].sum()) if "recharge_count" in df.columns else 0
+    total_ftd = int(df["ftd_count"].sum()) if "ftd_count" in df.columns else 0
     total_target = int(df["daily_target"].sum()) if "daily_target" in df.columns else 0
     total_calls = int(df["total_calls"].sum()) if "total_calls" in df.columns else 0
     answered_calls = int(df["answered_calls"].sum()) if "answered_calls" in df.columns else 0
     not_connected = int(df["not_connected"].sum()) if "not_connected" in df.columns else 0
     social_media_added = int(df["social_media_added"].sum()) if "social_media_added" in df.columns else 0
-    people_recalled = int(df["people_recalled"].sum()) if "people_recalled" in df.columns else 0
 
     # Calculate rates
     connection_rate = (answered_calls / total_calls * 100) if total_calls > 0 else 0.0
-    conversion_rate_recalled = (people_recalled / answered_calls * 100) if answered_calls > 0 else 0.0
-    avg_deposit_per_agent = (total_deposit_amount / active_agents) if active_agents > 0 else 0.0
+    ftd_conversion_rate = (total_ftd / answered_calls * 100) if answered_calls > 0 else 0.0
     target_completion = (total_recharge / total_target * 100) if total_target > 0 else 0.0
 
     return {
         "active_agents": int(active_agents),
-        "total_deposit_amount": round(total_deposit_amount, 2),
         "total_recharge": total_recharge,
+        "total_ftd": total_ftd,
         "total_target": total_target,
         "target_completion": round(target_completion, 2),
         "total_calls": total_calls,
         "answered_calls": answered_calls,
         "not_connected": not_connected,
         "social_media_added": social_media_added,
-        "people_recalled": people_recalled,
         "connection_rate": round(connection_rate, 2),
-        "conversion_rate_recalled": round(conversion_rate_recalled, 2),
-        "avg_deposit_per_agent": round(avg_deposit_per_agent, 2),
+        "ftd_conversion_rate": round(ftd_conversion_rate, 2),
     }
 
 
 def calculate_ftd_agent_metrics(df: pd.DataFrame) -> pd.DataFrame:
-    """Calculate metrics grouped by FTD agent"""
+    """Calculate metrics grouped by FTD agent (excluding TL)"""
+    from utils.data_processor import FTD_TEAM_LEADER
+
     if df.empty or "agent_name" not in df.columns:
         return pd.DataFrame()
 
+    # Exclude TL from agent metrics
+    df_agents = df[df["agent_name"] != FTD_TEAM_LEADER]
+
+    if df_agents.empty:
+        return pd.DataFrame()
+
     agg_dict = {}
-    for col in ["deposit_amount", "recharge_count", "daily_target", "total_calls",
-                "answered_calls", "not_connected", "social_media_added", "people_recalled"]:
-        if col in df.columns:
+    for col in ["recharge_count", "daily_target", "total_calls",
+                "answered_calls", "not_connected", "social_media_added", "ftd_count"]:
+        if col in df_agents.columns:
             agg_dict[col] = "sum"
 
     if not agg_dict:
         return pd.DataFrame()
 
-    metrics = df.groupby("agent_name").agg(agg_dict).reset_index()
+    metrics = df_agents.groupby("agent_name").agg(agg_dict).reset_index()
 
     # Calculate rates
     if "answered_calls" in metrics.columns and "total_calls" in metrics.columns:
@@ -399,10 +407,10 @@ def calculate_ftd_agent_metrics(df: pd.DataFrame) -> pd.DataFrame:
             0
         )
 
-    if "people_recalled" in metrics.columns and "answered_calls" in metrics.columns:
-        metrics["conversion_rate_recalled"] = np.where(
+    if "ftd_count" in metrics.columns and "answered_calls" in metrics.columns:
+        metrics["ftd_conversion_rate"] = np.where(
             metrics["answered_calls"] > 0,
-            metrics["people_recalled"] / metrics["answered_calls"] * 100,
+            metrics["ftd_count"] / metrics["answered_calls"] * 100,
             0
         )
 
@@ -418,18 +426,23 @@ def calculate_ftd_agent_metrics(df: pd.DataFrame) -> pd.DataFrame:
 
 def calculate_ftd_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
     """Calculate FTD metrics grouped by date"""
+    from utils.data_processor import FTD_TEAM_LEADER
+
     if df.empty or "date" not in df.columns:
         return pd.DataFrame()
 
+    # Exclude TL from daily agent count
+    df_agents = df[df["agent_name"] != FTD_TEAM_LEADER] if "agent_name" in df.columns else df
+
     agg_dict = {
-        "agent_name": "nunique"  # Count unique agents per day
+        "agent_name": "nunique"  # Count unique agents per day (excluding TL)
     }
-    for col in ["deposit_amount", "recharge_count", "daily_target", "total_calls",
-                "answered_calls", "not_connected", "social_media_added", "people_recalled"]:
+    for col in ["recharge_count", "daily_target", "total_calls",
+                "answered_calls", "not_connected", "social_media_added", "ftd_count"]:
         if col in df.columns:
             agg_dict[col] = "sum"
 
-    metrics = df.groupby("date").agg(agg_dict).reset_index()
+    metrics = df_agents.groupby("date").agg(agg_dict).reset_index()
     metrics = metrics.rename(columns={"agent_name": "active_agents"})
     metrics = metrics.sort_values("date")
 
@@ -441,10 +454,10 @@ def calculate_ftd_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
             0
         )
 
-    if "people_recalled" in metrics.columns and "answered_calls" in metrics.columns:
-        metrics["conversion_rate_recalled"] = np.where(
+    if "ftd_count" in metrics.columns and "answered_calls" in metrics.columns:
+        metrics["ftd_conversion_rate"] = np.where(
             metrics["answered_calls"] > 0,
-            metrics["people_recalled"] / metrics["answered_calls"] * 100,
+            metrics["ftd_count"] / metrics["answered_calls"] * 100,
             0
         )
 
