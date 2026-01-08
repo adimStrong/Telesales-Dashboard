@@ -34,6 +34,22 @@ COLUMN_POSITIONS_2026 = {
     "people_recalled": 10,  # Column K
 }
 
+# FTD Team Column Positions (2026 - FTD TEAM ANDREI sheet)
+FTD_COLUMN_POSITIONS = {
+    "date": 0,              # Column A - DATE
+    "agent_name": 1,        # Column B - AGENT
+    "deposit_amount": 2,    # Column C - VIP Depo.Amount (peso amount)
+    "recharge_count": 3,    # Column D - No. Of Recharge Counts
+    "daily_target": 4,      # Column E - Daily Target
+    "total_calls": 5,       # Column F - Total No.Calls
+    "not_connected": 6,     # Column G - NOT CONNECTED
+    # Column H (7) - Connection Rate (skip - calculated)
+    "social_media_added": 8,  # Column I - Social Media Added
+    "answered_calls": 9,    # Column J - Answer Calls
+    "people_recalled": 10,  # Column K - No. People Recalled
+    # Column L (11) - Conversion Rate (skip - calculated)
+}
+
 # No date filter - show all data that exists in sheets
 
 
@@ -141,6 +157,129 @@ def standardize_data(raw_values: list, year: int = 2025) -> pd.DataFrame:
     # Ensure friend_added exists (defaults to 0 for 2025 data)
     if "friend_added" not in df.columns:
         df["friend_added"] = 0
+
+    # Add year column
+    df["_year"] = year
+
+    # =========================================================================
+    # Clean agent_name (trim whitespace)
+    # =========================================================================
+    if "agent_name" in df.columns:
+        df["agent_name"] = df["agent_name"].astype(str).str.strip()
+        # Remove empty agent names
+        df = df[df["agent_name"] != ""]
+        df = df[df["agent_name"] != "nan"]
+
+    # All agents with data are considered present
+    df["is_present"] = True
+
+    return df
+
+
+def standardize_ftd_data(raw_values: list, year: int = 2026) -> pd.DataFrame:
+    """
+    Extract FTD team data by column position and standardize types.
+
+    Args:
+        raw_values: List of lists from worksheet.get_all_values()
+                   First row is headers, subsequent rows are data
+        year: Data year (default 2026 - FTD sheet only exists in 2026)
+
+    Returns:
+        Standardized DataFrame with FTD-specific columns
+    """
+    if not raw_values or len(raw_values) < 2:
+        return pd.DataFrame()
+
+    # Skip header row, extract data rows only
+    data_rows = raw_values[1:]
+
+    # Build records by extracting specific columns by position
+    data = []
+    for row in data_rows:
+        # Pad row if it's shorter than expected
+        if len(row) < 15:
+            row = row + [''] * (15 - len(row))
+
+        # Extract only the columns we need by position
+        record = {}
+        for field, col_idx in FTD_COLUMN_POSITIONS.items():
+            record[field] = row[col_idx] if col_idx < len(row) else ''
+
+        data.append(record)
+
+    df = pd.DataFrame(data)
+
+    # Remove completely empty rows
+    df = df.replace('', pd.NA)
+    df = df.dropna(how='all')
+
+    # =========================================================================
+    # Parse date column
+    # =========================================================================
+    if "date" in df.columns:
+        def parse_date(date_str, target_year):
+            if pd.isna(date_str) or not date_str:
+                return pd.NaT
+
+            date_str = str(date_str).strip()
+            parsed_date = None
+
+            # Try full date formats first
+            for fmt in ["%Y-%m-%d", "%m/%d/%Y", "%d/%m/%Y", "%m-%d-%Y"]:
+                try:
+                    parsed_date = pd.to_datetime(date_str, format=fmt)
+                    break
+                except:
+                    pass
+
+            # Try short format (month/day)
+            if parsed_date is None:
+                try:
+                    parts = date_str.split("/")
+                    if len(parts) == 2:
+                        month, day = int(parts[0]), int(parts[1])
+                        parsed_date = pd.Timestamp(year=target_year, month=month, day=day)
+                except:
+                    pass
+
+            # Fallback to pandas default
+            if parsed_date is None:
+                try:
+                    parsed_date = pd.to_datetime(date_str, errors="coerce")
+                except:
+                    return pd.NaT
+
+            # Force dates to target year
+            if parsed_date is not None and not pd.isna(parsed_date):
+                return parsed_date.replace(year=target_year)
+            return pd.NaT
+
+        df["date"] = df["date"].apply(lambda x: parse_date(x, year))
+
+    # =========================================================================
+    # Convert numeric columns
+    # =========================================================================
+    numeric_cols = [
+        "deposit_amount", "recharge_count", "daily_target", "total_calls",
+        "not_connected", "social_media_added", "answered_calls", "people_recalled"
+    ]
+
+    for col in numeric_cols:
+        if col in df.columns:
+            # Remove currency symbols (₱), commas, and whitespace
+            if df[col].dtype == object:
+                df[col] = df[col].astype(str).str.replace("₱", "", regex=False)
+                df[col] = df[col].str.replace(",", "", regex=False)
+                df[col] = df[col].str.replace(" ", "", regex=False)
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(float)
+
+    # Convert integer columns
+    int_cols = ["recharge_count", "daily_target", "total_calls", "not_connected",
+                "social_media_added", "answered_calls", "people_recalled"]
+    for col in int_cols:
+        if col in df.columns:
+            df[col] = df[col].astype(int)
 
     # Add year column
     df["_year"] = year

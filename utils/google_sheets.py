@@ -40,6 +40,11 @@ SHEET_CONFIG_2026 = {
     "TEAM K TEAM RUBY": {"team": "TEAM K", "tl": "RUBY"},
 }
 
+# FTD Team Sheet Configuration (2026 only)
+FTD_SHEET_CONFIG = {
+    "FTD TEAM ANDREI": {"team": "FTD TEAM", "tl": "ANDREI"},
+}
+
 # FOR TESTING: Only load one sheet (set to False to load all 11 sheets)
 TEST_MODE = False
 TEST_SHEET = "TL MIKE TEAM A"
@@ -174,6 +179,75 @@ def load_all_sheets_data(years: list = None) -> pd.DataFrame:
     return combined_df
 
 
+@st.cache_data(ttl=300)  # 5-minute cache
+def load_ftd_data(year: int = 2026, retry_count: int = 0) -> pd.DataFrame:
+    """Load FTD team data from dedicated sheet
+
+    Args:
+        year: Data year (default 2026 - FTD sheet only exists in 2026)
+        retry_count: Internal retry counter for rate limiting
+
+    Returns:
+        DataFrame with FTD team data
+    """
+    from utils.data_processor import standardize_ftd_data
+
+    max_retries = 3
+
+    try:
+        client = get_sheets_client()
+        if client is None:
+            return pd.DataFrame()
+
+        # FTD is only in 2026 spreadsheet
+        spreadsheet_id = st.secrets["spreadsheet_2026"]["spreadsheet_id"]
+        spreadsheet = client.open_by_key(spreadsheet_id)
+
+        # Load FTD TEAM ANDREI sheet
+        sheet_name = "FTD TEAM ANDREI"
+        worksheet = spreadsheet.worksheet(sheet_name)
+
+        # Get all values as raw list of lists
+        raw_values = worksheet.get_all_values()
+
+        if not raw_values or len(raw_values) < 2:
+            return pd.DataFrame()
+
+        # Pass raw values to standardize_ftd_data
+        df = standardize_ftd_data(raw_values, year=year)
+
+        if df.empty:
+            return pd.DataFrame()
+
+        # Add metadata columns
+        config = FTD_SHEET_CONFIG[sheet_name]
+        df["_team"] = config["team"]
+        df["_team_leader"] = config["tl"]
+        df["_sheet_name"] = sheet_name
+
+        return df
+
+    except gspread.exceptions.WorksheetNotFound:
+        st.warning(f"FTD sheet not found in {year}")
+        return pd.DataFrame()
+    except gspread.exceptions.APIError as e:
+        if "429" in str(e) and retry_count < max_retries:
+            # Rate limit hit - wait and retry with exponential backoff
+            wait_time = (2 ** retry_count) * 10
+            time.sleep(wait_time)
+            return load_ftd_data(year, retry_count + 1)
+        st.error(f"Error loading FTD sheet: {e}")
+        return pd.DataFrame()
+    except Exception as e:
+        st.error(f"Error loading FTD sheet: {e}")
+        return pd.DataFrame()
+
+
+def refresh_ftd_data():
+    """Clear FTD cache to force data refresh"""
+    load_ftd_data.clear()
+
+
 def get_available_sheets(year: int = None) -> list:
     """Get list of available sheet names"""
     if year == 2026:
@@ -224,4 +298,5 @@ def refresh_data():
     """Clear cache to force data refresh"""
     load_sheet_data.clear()
     load_all_sheets_data.clear()
+    load_ftd_data.clear()
     st.cache_data.clear()
