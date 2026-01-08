@@ -251,7 +251,8 @@ if not daily_metrics.empty:
             yaxis_title="Count",
             height=350,
             hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            xaxis=dict(tickformat="%b %d", dtick="D1")
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -279,7 +280,8 @@ if not daily_metrics.empty:
             yaxis_title="Calls",
             height=350,
             hovermode="x unified",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            xaxis=dict(tickformat="%b %d", dtick="D1")
         )
         st.plotly_chart(fig, use_container_width=True)
 
