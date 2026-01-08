@@ -126,9 +126,9 @@ kpis = calculate_ftd_kpis(df)
 # Row 1: 4 FTD-specific KPIs
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Active FTD Agents", format_number(kpis["active_agents"]))
-col2.metric("Total Deposit Amount", format_peso(kpis["total_deposit_amount"]))
-col3.metric("Total Recharges", format_number(kpis["total_recharge"]))
-col4.metric("Target Completion", format_percentage(kpis["target_completion"]))
+col2.metric("Total Recharges", format_number(kpis["total_recharge"]))
+col3.metric("Target Completion", format_percentage(kpis["target_completion"]))
+col4.metric("Social Media Added", format_number(kpis["social_media_added"]))
 
 # Row 2: 4 more KPIs
 col1, col2, col3, col4 = st.columns(4)
@@ -174,16 +174,16 @@ if not agent_metrics.empty:
         st.plotly_chart(fig, use_container_width=True)
 
     with col2:
-        st.markdown("##### Top Agents by Deposit Amount")
-        top_deposit = agent_metrics.nlargest(10, "deposit_amount")
+        st.markdown("##### Top Agents by Total Calls")
+        top_calls = agent_metrics.nlargest(10, "total_calls")
         fig = px.bar(
-            top_deposit.sort_values("deposit_amount", ascending=True),
-            x="deposit_amount",
+            top_calls.sort_values("total_calls", ascending=True),
+            x="total_calls",
             y="agent_name",
             orientation="h",
-            color="deposit_amount",
-            color_continuous_scale="Greens",
-            labels={"deposit_amount": "Deposit Amount", "agent_name": "Agent"}
+            color="total_calls",
+            color_continuous_scale="Blues",
+            labels={"total_calls": "Total Calls", "agent_name": "Agent"}
         )
         fig.update_layout(
             showlegend=False,
@@ -192,7 +192,7 @@ if not agent_metrics.empty:
             coloraxis_showscale=False
         )
         fig.update_traces(
-            texttemplate="₱%{x:,.0f}",
+            texttemplate="%{x:,.0f}",
             textposition="outside"
         )
         st.plotly_chart(fig, use_container_width=True)
@@ -225,7 +225,7 @@ if not daily_metrics.empty:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("##### Daily Recharges & Deposits")
+        st.markdown("##### Daily Recharges & Target")
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=daily_metrics["date"],
@@ -235,26 +235,18 @@ if not daily_metrics.empty:
             line=dict(color="#9b59b6", width=2),
             marker=dict(size=6)
         ))
-        if "deposit_amount" in daily_metrics.columns:
+        if "daily_target" in daily_metrics.columns:
             fig.add_trace(go.Scatter(
                 x=daily_metrics["date"],
-                y=daily_metrics["deposit_amount"],
+                y=daily_metrics["daily_target"],
                 mode="lines+markers",
-                name="Deposit Amount",
-                yaxis="y2",
-                line=dict(color="#27ae60", width=2),
+                name="Target",
+                line=dict(color="#e74c3c", width=2, dash="dash"),
                 marker=dict(size=6)
             ))
-            fig.update_layout(
-                yaxis2=dict(
-                    title="Deposit Amount (₱)",
-                    overlaying="y",
-                    side="right"
-                )
-            )
         fig.update_layout(
             xaxis_title="Date",
-            yaxis_title="Recharges",
+            yaxis_title="Count",
             height=350,
             hovermode="x unified",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
@@ -293,8 +285,6 @@ if not daily_metrics.empty:
     with st.expander("View Daily Data"):
         display_daily = daily_metrics.copy()
         display_daily["date"] = display_daily["date"].dt.strftime("%Y-%m-%d")
-        if "deposit_amount" in display_daily.columns:
-            display_daily["deposit_amount"] = display_daily["deposit_amount"].apply(lambda x: f"₱{x:,.2f}")
         if "recharge_count" in display_daily.columns:
             display_daily["recharge_count"] = display_daily["recharge_count"].apply(lambda x: f"{x:,}")
         if "total_calls" in display_daily.columns:
@@ -306,10 +296,10 @@ if not daily_metrics.empty:
         if "target_completion" in display_daily.columns:
             display_daily["target_completion"] = display_daily["target_completion"].apply(lambda x: f"{x:.1f}%")
 
-        display_cols = ["date", "active_agents", "deposit_amount", "recharge_count", "total_calls", "answered_calls", "connection_rate", "target_completion"]
+        display_cols = ["date", "active_agents", "recharge_count", "daily_target", "total_calls", "answered_calls", "connection_rate", "target_completion"]
         display_cols = [c for c in display_cols if c in display_daily.columns]
         display_daily = display_daily[display_cols].sort_values("date", ascending=False)
-        display_daily.columns = ["Date", "Agents", "Deposit Amt", "Recharges", "Total Calls", "Answered", "Conn Rate", "Target %"][:len(display_cols)]
+        display_daily.columns = ["Date", "Agents", "Recharges", "Target", "Total Calls", "Answered", "Conn Rate", "Target %"][:len(display_cols)]
 
         st.dataframe(display_daily, use_container_width=True, hide_index=True)
 else:
@@ -326,14 +316,11 @@ if not agent_metrics.empty:
     # Add rankings
     display_metrics = agent_metrics.copy()
     display_metrics["recharge_rank"] = display_metrics["recharge_count"].rank(ascending=False, method="min").astype(int)
-    display_metrics["deposit_rank"] = display_metrics["deposit_amount"].rank(ascending=False, method="min").astype(int)
 
     # Sort by recharge count
     display_metrics = display_metrics.sort_values("recharge_count", ascending=False)
 
     # Format columns
-    if "deposit_amount" in display_metrics.columns:
-        display_metrics["deposit_amount"] = display_metrics["deposit_amount"].apply(lambda x: f"₱{x:,.2f}")
     if "recharge_count" in display_metrics.columns:
         display_metrics["recharge_count"] = display_metrics["recharge_count"].apply(lambda x: f"{int(x):,}")
     if "daily_target" in display_metrics.columns:
@@ -348,14 +335,13 @@ if not agent_metrics.empty:
         display_metrics["target_completion"] = display_metrics["target_completion"].apply(lambda x: f"{x:.1f}%")
 
     # Select columns for display
-    display_cols = ["recharge_rank", "agent_name", "deposit_amount", "recharge_count", "daily_target", "target_completion", "total_calls", "answered_calls", "connection_rate"]
+    display_cols = ["recharge_rank", "agent_name", "recharge_count", "daily_target", "target_completion", "total_calls", "answered_calls", "connection_rate"]
     display_cols = [c for c in display_cols if c in display_metrics.columns]
     display_metrics = display_metrics[display_cols]
 
     col_config = {
         "recharge_rank": "Rank",
         "agent_name": "Agent",
-        "deposit_amount": "Deposit Amt",
         "recharge_count": "Recharges",
         "daily_target": "Target",
         "target_completion": "Target %",
