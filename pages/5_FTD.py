@@ -139,6 +139,10 @@ col2.metric("Answered Calls", format_number(kpis["answered_calls"]))
 col3.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
 col4.metric("FTD Conv %", format_percentage(kpis["ftd_conversion_rate"]))
 
+# Row 3: Additional KPI
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Social Media Added", format_number(kpis["social_media_added"]))
+
 st.markdown("---")
 
 # =============================================================================
