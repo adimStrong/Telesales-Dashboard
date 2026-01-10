@@ -74,10 +74,11 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     - answered_calls: SUM of answered_calls
     - not_connected: SUM of not_connected
     - connection_rate: CALCULATED (answered_calls / total_calls) * 100
-    - people_recalled: SUM of people_recalled
+    - people_recalled: SUM of people_recalled (agents only, excluding TL)
+    - vip_recalled: SUM of people_recalled from TL rows only
     - friend_added: SUM of friend_added (2026 only, 0 for 2025)
     - conversion_rate_calls: CALCULATED (answered_calls / total_calls) * 100
-    - conversion_rate_recalled: CALCULATED (people_recalled / answered_calls) * 100
+    - conversion_rate_recalled: CALCULATED (total_recalled / answered_calls) * 100
     """
     if df.empty:
         return {
@@ -88,6 +89,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "not_connected": 0,
             "connection_rate": 0.0,
             "people_recalled": 0,
+            "vip_recalled": 0,
             "friend_added": 0,
             "conversion_rate_calls": 0.0,
             "conversion_rate_recalled": 0.0,
@@ -101,13 +103,40 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     total_calls = int(df["total_calls"].sum()) if "total_calls" in df.columns else 0
     answered_calls = int(df["answered_calls"].sum()) if "answered_calls" in df.columns else 0
     not_connected = int(df["not_connected"].sum()) if "not_connected" in df.columns else 0
-    people_recalled = int(df["people_recalled"].sum()) if "people_recalled" in df.columns else 0
     friend_added = int(df["friend_added"].sum()) if "friend_added" in df.columns else 0
+
+    # Separate TL and agent recalled metrics
+    if "_team_leader" in df.columns and "agent_name" in df.columns and "people_recalled" in df.columns:
+        # Get all TL names from config
+        from utils.google_sheets import SHEET_CONFIG, SHEET_CONFIG_2026
+        all_tl_names = set()
+        for config in SHEET_CONFIG.values():
+            all_tl_names.add(config["tl"].upper())
+        for config in SHEET_CONFIG_2026.values():
+            all_tl_names.add(config["tl"].upper())
+
+        # Check if agent_name contains TL name (case-insensitive match)
+        # TL rows have agent names like "ONI", "PEARL", "TL ONI" etc.
+        is_tl = df["agent_name"].apply(
+            lambda x: any(tl in str(x).upper() for tl in all_tl_names)
+        )
+
+        # VIP Recalled = TL's people_recalled
+        vip_recalled = int(df.loc[is_tl, "people_recalled"].sum())
+
+        # People Recalled = Agents' people_recalled (excluding TL)
+        people_recalled = int(df.loc[~is_tl, "people_recalled"].sum())
+    else:
+        # Fallback: no separation possible
+        vip_recalled = 0
+        people_recalled = int(df["people_recalled"].sum()) if "people_recalled" in df.columns else 0
 
     # Calculate rates
     connection_rate = (answered_calls / total_calls * 100) if total_calls > 0 else 0.0
     conversion_rate_calls = (answered_calls / total_calls * 100) if total_calls > 0 else 0.0
-    conversion_rate_recalled = (people_recalled / answered_calls * 100) if answered_calls > 0 else 0.0
+    # Use total recalled (agents + TL) for conversion rate
+    total_recalled = people_recalled + vip_recalled
+    conversion_rate_recalled = (total_recalled / answered_calls * 100) if answered_calls > 0 else 0.0
 
     return {
         "active_agents": int(active_agents),
@@ -117,6 +146,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         "not_connected": not_connected,
         "connection_rate": round(connection_rate, 2),
         "people_recalled": people_recalled,
+        "vip_recalled": vip_recalled,
         "friend_added": friend_added,
         "conversion_rate_calls": round(conversion_rate_calls, 2),
         "conversion_rate_recalled": round(conversion_rate_recalled, 2),
