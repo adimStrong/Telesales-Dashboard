@@ -70,7 +70,34 @@ st.markdown("""
 
 def render_kpi_cards(kpis: dict, year: int = 2026):
     """Render the main KPI cards"""
-    # Row 1: 4 KPIs
+    # Row 1: TOTAL CALLS, ANSWERED CALLS, NOT CONNECTED, CONNECTION RATE
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            label="Total Calls",
+            value=format_number(kpis["total_calls"]),
+        )
+
+    with col2:
+        st.metric(
+            label="Answered Calls",
+            value=format_number(kpis["answered_calls"]),
+        )
+
+    with col3:
+        st.metric(
+            label="Not Connected",
+            value=format_number(kpis["not_connected"]),
+        )
+
+    with col4:
+        st.metric(
+            label="Connection Rate",
+            value=format_percentage(kpis["connection_rate"]),
+        )
+
+    # Row 2: Active Agent, NO. OF RECALLED, VIP RECALLED, CONVERSION RATE
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -81,68 +108,41 @@ def render_kpi_cards(kpis: dict, year: int = 2026):
 
     with col2:
         st.metric(
-            label="Recharge Count",
-            value=format_number(kpis["recharge_count"]),
-        )
-
-    with col3:
-        st.metric(
-            label="Total Calls",
-            value=format_number(kpis["total_calls"]),
-        )
-
-    with col4:
-        st.metric(
-            label="Answered Calls",
-            value=format_number(kpis["answered_calls"]),
-        )
-
-    # Row 2: Connection and Recall metrics
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.metric(
-            label="Not Connected",
-            value=format_number(kpis["not_connected"]),
-        )
-
-    with col2:
-        st.metric(
-            label="Connection Rate",
-            value=format_percentage(kpis["connection_rate"]),
-        )
-
-    with col3:
-        st.metric(
-            label="People Recalled",
+            label="No. of Recalled",
             value=format_number(kpis["people_recalled"]),
         )
 
-    with col4:
+    with col3:
         st.metric(
             label="VIP Recalled",
             value=format_number(kpis.get("vip_recalled", 0)),
         )
 
-    # Row 3: Friend Added and Conversion
+    with col4:
+        st.metric(
+            label="Recall Conv %",
+            value=format_percentage(kpis["conversion_rate_recalled"]),
+        )
+
+    # Row 3: Recharge Count, Friend Added
     if year == 2026:
         col1, col2 = st.columns(2)
         with col1:
             st.metric(
-                label="Friend Added",
-                value=format_number(kpis["friend_added"]),
+                label="Recharge Count",
+                value=format_number(kpis["recharge_count"]),
             )
         with col2:
             st.metric(
-                label="Recall Conv %",
-                value=format_percentage(kpis["conversion_rate_recalled"]),
+                label="Friend Added",
+                value=format_number(kpis["friend_added"]),
             )
     else:
         col1, col2 = st.columns(2)
         with col1:
             st.metric(
-                label="Recall Conv %",
-                value=format_percentage(kpis["conversion_rate_recalled"]),
+                label="Recharge Count",
+                value=format_number(kpis["recharge_count"]),
             )
 
 
