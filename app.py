@@ -1,6 +1,7 @@
 """
 JUAN365 Telesales Real-Time Dashboard
 Main Application Entry Point - Position-Based Column Extraction
+Version: 2026-01-10 v2 - VIP Recalled metrics
 """
 import streamlit as st
 import pandas as pd
