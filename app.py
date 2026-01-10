@@ -123,9 +123,9 @@ def render_kpi_cards(kpis: dict, year: int = 2026):
             value=format_number(kpis.get("vip_recalled", 0)),
         )
 
-    # Row 3: Friend Added and Conversion (Friend Added only for 2026)
+    # Row 3: Friend Added and Conversion
     if year == 2026:
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2 = st.columns(2)
         with col1:
             st.metric(
                 label="Friend Added",
@@ -137,7 +137,7 @@ def render_kpi_cards(kpis: dict, year: int = 2026):
                 value=format_percentage(kpis["conversion_rate_recalled"]),
             )
     else:
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2 = st.columns(2)
         with col1:
             st.metric(
                 label="Recall Conv %",
