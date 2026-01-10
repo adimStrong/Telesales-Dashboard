@@ -135,7 +135,16 @@ col1, col2, col3, col4 = st.columns(4)
 col1.metric("Not Connected", format_number(kpis["not_connected"]))
 col2.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
 col3.metric("People Recalled", format_number(kpis["people_recalled"]))
-col4.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
+col4.metric("VIP Recalled", format_number(kpis.get("vip_recalled", 0)))
+
+# Row 3: Friend Added and Recall Conversion (2026 only)
+if year_int == 2026:
+    col1, col2 = st.columns(2)
+    col1.metric("Friend Added", format_number(kpis.get("friend_added", 0)))
+    col2.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
+else:
+    col1, col2 = st.columns(2)
+    col1.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
 
 st.markdown("---")
 
