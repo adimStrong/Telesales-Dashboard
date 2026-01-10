@@ -294,6 +294,14 @@ def main():
     with col1:
         st.markdown("### Teams Overview")
         if "_team" in df.columns:
+            # Get all TL names for VIP Recalled separation
+            from utils.google_sheets import SHEET_CONFIG, SHEET_CONFIG_2026
+            all_tl_names = set()
+            for config in SHEET_CONFIG.values():
+                all_tl_names.add(config["tl"].upper())
+            for config in SHEET_CONFIG_2026.values():
+                all_tl_names.add(config["tl"].upper())
+
             team_data = []
             for team in sorted(df["_team"].unique()):
                 team_df = df[df["_team"] == team]
@@ -304,10 +312,23 @@ def main():
                 total_calls = int(team_df["total_calls"].sum()) if "total_calls" in team_df.columns else 0
                 answered = int(team_df["answered_calls"].sum()) if "answered_calls" in team_df.columns else 0
                 not_conn = int(team_df["not_connected"].sum()) if "not_connected" in team_df.columns else 0
-                recalled = int(team_df["people_recalled"].sum()) if "people_recalled" in team_df.columns else 0
                 friend_add = int(team_df["friend_added"].sum()) if "friend_added" in team_df.columns else 0
-                # Calculate conversion rate
-                conv_rate = round((recalled / answered * 100), 1) if answered > 0 else 0
+
+                # Separate TL recalled (VIP) from agent recalled
+                if "people_recalled" in team_df.columns and "agent_name" in team_df.columns:
+                    is_tl = team_df["agent_name"].apply(
+                        lambda x: any(tl in str(x).upper() for tl in all_tl_names)
+                    )
+                    vip_recalled = int(team_df.loc[is_tl, "people_recalled"].sum())
+                    people_recalled = int(team_df.loc[~is_tl, "people_recalled"].sum())
+                else:
+                    vip_recalled = 0
+                    people_recalled = int(team_df["people_recalled"].sum()) if "people_recalled" in team_df.columns else 0
+
+                # Calculate conversion rate using total recalled
+                total_recalled = people_recalled + vip_recalled
+                conv_rate = round((total_recalled / answered * 100), 1) if answered > 0 else 0
+
                 row_data = {
                     "Team": team,
                     "TL": team_df["_team_leader"].iloc[0] if "_team_leader" in team_df.columns else "-",
@@ -316,7 +337,8 @@ def main():
                     "Total Calls": f"{total_calls:,}",
                     "Answered": f"{answered:,}",
                     "Not Connected": f"{not_conn:,}",
-                    "Recalled": f"{recalled:,}",
+                    "Recalled": f"{people_recalled:,}",
+                    "VIP Recalled": f"{vip_recalled:,}",
                 }
                 # Only add Friend Added for 2026
                 if year_int == 2026:
