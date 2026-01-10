@@ -123,28 +123,28 @@ if df.empty:
 st.markdown("### Key Metrics Summary")
 kpis = calculate_kpis(df)
 
-# Row 1: 4 KPIs
+# Row 1: TOTAL CALLS, ANSWERED CALLS, NOT CONNECTED, CONNECTION RATE
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Total Calls", format_number(kpis["total_calls"]))
+col2.metric("Answered Calls", format_number(kpis["answered_calls"]))
+col3.metric("Not Connected", format_number(kpis["not_connected"]))
+col4.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
+
+# Row 2: Active Agent, NO. OF RECALLED, VIP RECALLED, CONVERSION RATE
 col1, col2, col3, col4 = st.columns(4)
 col1.metric("Active Agents", format_number(kpis["active_agents"]))
-col2.metric("Recharge Count", format_number(kpis["recharge_count"]))
-col3.metric("Total Calls", format_number(kpis["total_calls"]))
-col4.metric("Answered Calls", format_number(kpis["answered_calls"]))
+col2.metric("No. of Recalled", format_number(kpis["people_recalled"]))
+col3.metric("VIP Recalled", format_number(kpis.get("vip_recalled", 0)))
+col4.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
 
-# Row 2: 4 KPIs
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Not Connected", format_number(kpis["not_connected"]))
-col2.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
-col3.metric("People Recalled", format_number(kpis["people_recalled"]))
-col4.metric("VIP Recalled", format_number(kpis.get("vip_recalled", 0)))
-
-# Row 3: Friend Added and Recall Conversion (2026 only)
+# Row 3: Recharge Count, Friend Added
 if year_int == 2026:
     col1, col2 = st.columns(2)
-    col1.metric("Friend Added", format_number(kpis.get("friend_added", 0)))
-    col2.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
+    col1.metric("Recharge Count", format_number(kpis["recharge_count"]))
+    col2.metric("Friend Added", format_number(kpis.get("friend_added", 0)))
 else:
     col1, col2 = st.columns(2)
-    col1.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
+    col1.metric("Recharge Count", format_number(kpis["recharge_count"]))
 
 st.markdown("---")
 
