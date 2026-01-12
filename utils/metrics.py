@@ -132,11 +132,24 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         vip_recalled = 0
         people_recalled = int(df["people_recalled"].sum()) if "people_recalled" in df.columns else 0
 
-    # Calculate FTD Result (ftd_count from FTD TEAM only)
+    # Calculate FTD Result (ftd_count from FTD TEAM only, before Jan 6 2026)
+    # After Jan 6, FTD team uses recharge instead of ftd_count
     ftd_result = 0
-    if "_team" in df.columns and "ftd_count" in df.columns:
+    ftd_as_recharge = 0
+    if "_team" in df.columns and "ftd_count" in df.columns and "date" in df.columns:
         ftd_team_df = df[df["_team"] == "FTD TEAM"]
-        ftd_result = int(ftd_team_df["ftd_count"].sum()) if not ftd_team_df.empty else 0
+        if not ftd_team_df.empty:
+            from datetime import datetime as dt
+            jan6_2026 = pd.Timestamp(2026, 1, 6)
+            # FTD Result = ftd_count before Jan 6
+            ftd_before_jan6 = ftd_team_df[ftd_team_df["date"] < jan6_2026]
+            ftd_result = int(ftd_before_jan6["ftd_count"].sum()) if not ftd_before_jan6.empty else 0
+            # FTD after Jan 6 should be added to recharge
+            ftd_after_jan6 = ftd_team_df[ftd_team_df["date"] >= jan6_2026]
+            ftd_as_recharge = int(ftd_after_jan6["ftd_count"].sum()) if not ftd_after_jan6.empty else 0
+
+    # Add FTD after Jan 6 to recharge count
+    recharge_count = recharge_count + ftd_as_recharge
 
     # Calculate rates
     connection_rate = (answered_calls / total_calls * 100) if total_calls > 0 else 0.0
