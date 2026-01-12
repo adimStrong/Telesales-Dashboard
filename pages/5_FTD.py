@@ -125,11 +125,12 @@ if df.empty:
 st.markdown("### Key FTD Metrics")
 kpis = calculate_ftd_kpis(df)
 
-# Row 1: 3 FTD-specific KPIs (Target removed)
-col1, col2, col3 = st.columns(3)
+# Row 1: 4 FTD-specific KPIs
+col1, col2, col3, col4 = st.columns(4)
 col1.metric("Active FTD Agents", format_number(kpis["active_agents"]))
 col2.metric("FTD Result", format_number(kpis["total_ftd"]))
 col3.metric("Total Recharges", format_number(kpis["total_recharge"]))
+col4.metric("Social Media Added", format_number(kpis["social_media_added"]))
 
 # Row 2: 4 more KPIs
 col1, col2, col3, col4 = st.columns(4)
@@ -137,10 +138,6 @@ col1.metric("Total Calls", format_number(kpis["total_calls"]))
 col2.metric("Answered Calls", format_number(kpis["answered_calls"]))
 col3.metric("Connection Rate", format_percentage(kpis["connection_rate"]))
 col4.metric("FTD Conv %", format_percentage(kpis["ftd_conversion_rate"]))
-
-# Row 3: Additional KPI
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Social Media Added", format_number(kpis["social_media_added"]))
 
 st.markdown("---")
 
