@@ -125,12 +125,11 @@ if df.empty:
 st.markdown("### Key FTD Metrics")
 kpis = calculate_ftd_kpis(df)
 
-# Row 1: 4 FTD-specific KPIs
-col1, col2, col3, col4 = st.columns(4)
+# Row 1: 3 FTD-specific KPIs (Target removed)
+col1, col2, col3 = st.columns(3)
 col1.metric("Active FTD Agents", format_number(kpis["active_agents"]))
 col2.metric("FTD Result", format_number(kpis["total_ftd"]))
 col3.metric("Total Recharges", format_number(kpis["total_recharge"]))
-col4.metric("Target Completion", format_percentage(kpis["target_completion"]))
 
 # Row 2: 4 more KPIs
 col1, col2, col3, col4 = st.columns(4)
@@ -231,7 +230,7 @@ if not daily_metrics.empty:
     col1, col2 = st.columns(2)
 
     with col1:
-        st.markdown("##### Daily Recharges & Target")
+        st.markdown("##### Daily Recharges")
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=daily_metrics["date"],
@@ -241,15 +240,6 @@ if not daily_metrics.empty:
             line=dict(color="#9b59b6", width=2),
             marker=dict(size=6)
         ))
-        if "daily_target" in daily_metrics.columns:
-            fig.add_trace(go.Scatter(
-                x=daily_metrics["date"],
-                y=daily_metrics["daily_target"],
-                mode="lines+markers",
-                name="Target",
-                line=dict(color="#e74c3c", width=2, dash="dash"),
-                marker=dict(size=6)
-            ))
         fig.update_layout(
             xaxis_title="Date",
             yaxis_title="Count",
@@ -303,13 +293,11 @@ if not daily_metrics.empty:
             display_daily["answered_calls"] = display_daily["answered_calls"].apply(lambda x: f"{int(x):,}")
         if "connection_rate" in display_daily.columns:
             display_daily["connection_rate"] = display_daily["connection_rate"].apply(lambda x: f"{x:.1f}%")
-        if "target_completion" in display_daily.columns:
-            display_daily["target_completion"] = display_daily["target_completion"].apply(lambda x: f"{x:.1f}%")
 
-        display_cols = ["date", "active_agents", "ftd_count", "recharge_count", "daily_target", "total_calls", "answered_calls", "connection_rate", "target_completion"]
+        display_cols = ["date", "active_agents", "ftd_count", "recharge_count", "total_calls", "answered_calls", "connection_rate"]
         display_cols = [c for c in display_cols if c in display_daily.columns]
         display_daily = display_daily[display_cols].sort_values("date", ascending=False)
-        display_daily.columns = ["Date", "Agents", "FTD", "Recharges", "Target", "Calls", "Answered", "Conn Rate", "Target %"][:len(display_cols)]
+        display_daily.columns = ["Date", "Agents", "FTD", "Recharges", "Calls", "Answered", "Conn Rate"][:len(display_cols)]
 
         st.dataframe(display_daily, use_container_width=True, hide_index=True)
 else:
@@ -335,8 +323,6 @@ if not agent_metrics.empty:
         display_metrics["ftd_count"] = display_metrics["ftd_count"].apply(lambda x: f"{int(x):,}")
     if "recharge_count" in display_metrics.columns:
         display_metrics["recharge_count"] = display_metrics["recharge_count"].apply(lambda x: f"{int(x):,}")
-    if "daily_target" in display_metrics.columns:
-        display_metrics["daily_target"] = display_metrics["daily_target"].apply(lambda x: f"{int(x):,}")
     if "total_calls" in display_metrics.columns:
         display_metrics["total_calls"] = display_metrics["total_calls"].apply(lambda x: f"{int(x):,}")
     if "answered_calls" in display_metrics.columns:
@@ -345,11 +331,9 @@ if not agent_metrics.empty:
         display_metrics["connection_rate"] = display_metrics["connection_rate"].apply(lambda x: f"{x:.1f}%")
     if "ftd_conversion_rate" in display_metrics.columns:
         display_metrics["ftd_conversion_rate"] = display_metrics["ftd_conversion_rate"].apply(lambda x: f"{x:.1f}%")
-    if "target_completion" in display_metrics.columns:
-        display_metrics["target_completion"] = display_metrics["target_completion"].apply(lambda x: f"{x:.1f}%")
 
-    # Select columns for display
-    display_cols = ["recharge_rank", "agent_name", "ftd_count", "recharge_count", "daily_target", "target_completion", "total_calls", "answered_calls", "connection_rate"]
+    # Select columns for display (target columns removed)
+    display_cols = ["recharge_rank", "agent_name", "ftd_count", "recharge_count", "total_calls", "answered_calls", "connection_rate"]
     display_cols = [c for c in display_cols if c in display_metrics.columns]
     display_metrics = display_metrics[display_cols]
 
@@ -358,8 +342,6 @@ if not agent_metrics.empty:
         "agent_name": "Agent",
         "ftd_count": "FTD",
         "recharge_count": "Recharges",
-        "daily_target": "Target",
-        "target_completion": "Target %",
         "total_calls": "Calls",
         "answered_calls": "Answered",
         "connection_rate": "Conn Rate"

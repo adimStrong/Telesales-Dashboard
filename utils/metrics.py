@@ -348,7 +348,6 @@ def calculate_ftd_kpis(df: pd.DataFrame) -> dict:
     - social_media_added: SUM of social_media_added
     - connection_rate: CALCULATED (answered_calls / total_calls) * 100
     - ftd_conversion_rate: CALCULATED (ftd_count / answered_calls) * 100
-    - target_completion: total_recharge / SUM of daily_target * 100
     """
     from utils.data_processor import FTD_TEAM_LEADER
 
@@ -357,8 +356,6 @@ def calculate_ftd_kpis(df: pd.DataFrame) -> dict:
             "active_agents": 0,
             "total_recharge": 0,
             "total_ftd": 0,
-            "total_target": 0,
-            "target_completion": 0.0,
             "total_calls": 0,
             "answered_calls": 0,
             "not_connected": 0,
@@ -379,7 +376,6 @@ def calculate_ftd_kpis(df: pd.DataFrame) -> dict:
     # Sum metrics from columns (use full df for totals)
     total_recharge = int(df["recharge_count"].sum()) if "recharge_count" in df.columns else 0
     total_ftd = int(df["ftd_count"].sum()) if "ftd_count" in df.columns else 0
-    total_target = int(df["daily_target"].sum()) if "daily_target" in df.columns else 0
     total_calls = int(df["total_calls"].sum()) if "total_calls" in df.columns else 0
     answered_calls = int(df["answered_calls"].sum()) if "answered_calls" in df.columns else 0
     not_connected = int(df["not_connected"].sum()) if "not_connected" in df.columns else 0
@@ -388,14 +384,11 @@ def calculate_ftd_kpis(df: pd.DataFrame) -> dict:
     # Calculate rates
     connection_rate = (answered_calls / total_calls * 100) if total_calls > 0 else 0.0
     ftd_conversion_rate = (total_ftd / answered_calls * 100) if answered_calls > 0 else 0.0
-    target_completion = (total_recharge / total_target * 100) if total_target > 0 else 0.0
 
     return {
         "active_agents": int(active_agents),
         "total_recharge": total_recharge,
         "total_ftd": total_ftd,
-        "total_target": total_target,
-        "target_completion": round(target_completion, 2),
         "total_calls": total_calls,
         "answered_calls": answered_calls,
         "not_connected": not_connected,
@@ -419,7 +412,7 @@ def calculate_ftd_agent_metrics(df: pd.DataFrame) -> pd.DataFrame:
         return pd.DataFrame()
 
     agg_dict = {}
-    for col in ["recharge_count", "daily_target", "total_calls",
+    for col in ["recharge_count", "total_calls",
                 "answered_calls", "not_connected", "social_media_added", "ftd_count"]:
         if col in df_agents.columns:
             agg_dict[col] = "sum"
@@ -444,13 +437,6 @@ def calculate_ftd_agent_metrics(df: pd.DataFrame) -> pd.DataFrame:
             0
         )
 
-    if "recharge_count" in metrics.columns and "daily_target" in metrics.columns:
-        metrics["target_completion"] = np.where(
-            metrics["daily_target"] > 0,
-            metrics["recharge_count"] / metrics["daily_target"] * 100,
-            0
-        )
-
     return metrics
 
 
@@ -467,7 +453,7 @@ def calculate_ftd_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
     agg_dict = {
         "agent_name": "nunique"  # Count unique agents per day (excluding TL)
     }
-    for col in ["recharge_count", "daily_target", "total_calls",
+    for col in ["recharge_count", "total_calls",
                 "answered_calls", "not_connected", "social_media_added", "ftd_count"]:
         if col in df.columns:
             agg_dict[col] = "sum"
@@ -488,13 +474,6 @@ def calculate_ftd_daily_metrics(df: pd.DataFrame) -> pd.DataFrame:
         metrics["ftd_conversion_rate"] = np.where(
             metrics["answered_calls"] > 0,
             metrics["ftd_count"] / metrics["answered_calls"] * 100,
-            0
-        )
-
-    if "recharge_count" in metrics.columns and "daily_target" in metrics.columns:
-        metrics["target_completion"] = np.where(
-            metrics["daily_target"] > 0,
-            metrics["recharge_count"] / metrics["daily_target"] * 100,
             0
         )
 

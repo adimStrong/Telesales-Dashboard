@@ -36,8 +36,9 @@ SHEET_CONFIG_2026 = {
     "TEAM G TL JAYE": {"team": "TEAM G", "tl": "JAYE"},
     "TEAM H TL JAYE": {"team": "TEAM H", "tl": "JAYE"},
     "TEAM I TL BOB": {"team": "TEAM I", "tl": "BOB"},
-    "TEAM J TL WINSON": {"team": "TEAM J", "tl": "WINSON"},
+    "TEAM J TL NICOLE": {"team": "TEAM J", "tl": "NICOLE"},
     "TEAM K TEAM RUBY": {"team": "TEAM K", "tl": "RUBY"},
+    "FTD TEAM ANDREI": {"team": "FTD TEAM", "tl": "ANDREI"},
 }
 
 # FTD Team Sheet Configuration (2026 only)
@@ -73,9 +74,10 @@ def get_sheets_client():
 @st.cache_data(ttl=300)  # 5-minute cache
 def load_sheet_data(sheet_name: str, year: int = 2025, retry_count: int = 0) -> pd.DataFrame:
     """Load data from a single sheet using position-based extraction"""
-    from utils.data_processor import standardize_data
+    from utils.data_processor import standardize_data, standardize_ftd_data
 
     max_retries = 3
+    is_ftd_sheet = sheet_name == "FTD TEAM ANDREI"
 
     try:
         client = get_sheets_client()
@@ -99,8 +101,20 @@ def load_sheet_data(sheet_name: str, year: int = 2025, retry_count: int = 0) -> 
         if not raw_values or len(raw_values) < 2:
             return pd.DataFrame()
 
-        # Pass raw values to standardize_data with year for correct column positions
-        df = standardize_data(raw_values, year=year)
+        # Use FTD-specific standardization for FTD sheet, then map to standard columns
+        if is_ftd_sheet:
+            df = standardize_ftd_data(raw_values, year=year)
+            # Map FTD columns to standard column names for integration
+            if not df.empty:
+                # social_media_added -> friend_added
+                if "social_media_added" in df.columns:
+                    df["friend_added"] = df["social_media_added"]
+                # ftd_count -> people_recalled
+                if "ftd_count" in df.columns:
+                    df["people_recalled"] = df["ftd_count"]
+        else:
+            # Pass raw values to standardize_data with year for correct column positions
+            df = standardize_data(raw_values, year=year)
 
         if df.empty:
             return pd.DataFrame()
