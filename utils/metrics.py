@@ -107,19 +107,11 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     friend_added = int(df["friend_added"].sum()) if "friend_added" in df.columns else 0
 
     # Separate TL and agent recalled metrics
-    if "_team_leader" in df.columns and "agent_name" in df.columns and "people_recalled" in df.columns:
-        # Get all TL names from config
-        from utils.google_sheets import SHEET_CONFIG, SHEET_CONFIG_2026
-        all_tl_names = set()
-        for config in SHEET_CONFIG.values():
-            all_tl_names.add(config["tl"].upper())
-        for config in SHEET_CONFIG_2026.values():
-            all_tl_names.add(config["tl"].upper())
-
-        # Check if agent_name contains TL name (case-insensitive match)
-        # TL rows have agent names like "ONI", "PEARL", "TL ONI" etc.
+    # VIP Recalled = TL rows only (agent_name contains "- TL " but NOT "- ATL ")
+    if "agent_name" in df.columns and "people_recalled" in df.columns:
+        # Match rows where agent_name contains "- TL " (Team Leader) but NOT "- ATL " (Assistant TL)
         is_tl = df["agent_name"].apply(
-            lambda x: any(tl in str(x).upper() for tl in all_tl_names)
+            lambda x: ("- TL " in str(x).upper() or " TL " in str(x).upper()) and "- ATL " not in str(x).upper()
         )
 
         # VIP Recalled = TL's people_recalled
