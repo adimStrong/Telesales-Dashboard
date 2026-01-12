@@ -68,7 +68,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-def render_kpi_cards(kpis: dict, year: int = 2026):
+def render_kpi_cards(kpis: dict, year: int = 2026, show_ftd_result: bool = False):
     """Render the main KPI cards"""
     # Row 1: TOTAL CALLS, ANSWERED CALLS, NOT CONNECTED, CONNECTION RATE
     col1, col2, col3, col4 = st.columns(4)
@@ -124,19 +124,37 @@ def render_kpi_cards(kpis: dict, year: int = 2026):
             value=format_percentage(kpis["conversion_rate_recalled"]),
         )
 
-    # Row 3: Recharge Count, Friend Added
+    # Row 3: Recharge Count, Friend Added, FTD Result (before Jan 6 only)
     if year == 2026:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.metric(
-                label="Recharge Count",
-                value=format_number(kpis["recharge_count"]),
-            )
-        with col2:
-            st.metric(
-                label="Friend Added",
-                value=format_number(kpis["friend_added"]),
-            )
+        if show_ftd_result:
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric(
+                    label="Recharge Count",
+                    value=format_number(kpis["recharge_count"]),
+                )
+            with col2:
+                st.metric(
+                    label="Friend Added",
+                    value=format_number(kpis["friend_added"]),
+                )
+            with col3:
+                st.metric(
+                    label="FTD Result",
+                    value=format_number(kpis.get("ftd_result", 0)),
+                )
+        else:
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric(
+                    label="Recharge Count",
+                    value=format_number(kpis["recharge_count"]),
+                )
+            with col2:
+                st.metric(
+                    label="Friend Added",
+                    value=format_number(kpis["friend_added"]),
+                )
     else:
         col1, col2 = st.columns(2)
         with col1:
@@ -199,6 +217,11 @@ def main():
     # Get date range
     min_date, max_date = get_unique_dates(df)
 
+    # Track if FTD Result should be shown (before Jan 6, 2026 only)
+    show_ftd_result = False
+    from datetime import date as date_type
+    ftd_cutoff_date = date_type(2026, 1, 6)
+
     # Sidebar filters continued
     with st.sidebar:
         # Date range filter
@@ -213,6 +236,9 @@ def main():
             )
             if len(date_range) == 2:
                 df = filter_by_date_range(df, date_range[0], date_range[1])
+                # Show FTD Result only if end date is before Jan 6, 2026
+                if year_int == 2026 and date_range[1] < ftd_cutoff_date:
+                    show_ftd_result = True
         else:
             st.info("No date data available")
 
@@ -285,7 +311,7 @@ def main():
     # Calculate and display KPIs
     st.markdown("### Key Performance Indicators")
     kpis = calculate_kpis(df)
-    render_kpi_cards(kpis, year=year_int)
+    render_kpi_cards(kpis, year=year_int, show_ftd_result=show_ftd_result)
 
     st.markdown("---")
 

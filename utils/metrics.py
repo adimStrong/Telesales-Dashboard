@@ -91,6 +91,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
             "people_recalled": 0,
             "vip_recalled": 0,
             "friend_added": 0,
+            "ftd_result": 0,
             "conversion_rate_calls": 0.0,
             "conversion_rate_recalled": 0.0,
         }
@@ -131,6 +132,12 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         vip_recalled = 0
         people_recalled = int(df["people_recalled"].sum()) if "people_recalled" in df.columns else 0
 
+    # Calculate FTD Result (ftd_count from FTD TEAM only)
+    ftd_result = 0
+    if "_team" in df.columns and "ftd_count" in df.columns:
+        ftd_team_df = df[df["_team"] == "FTD TEAM"]
+        ftd_result = int(ftd_team_df["ftd_count"].sum()) if not ftd_team_df.empty else 0
+
     # Calculate rates
     connection_rate = (answered_calls / total_calls * 100) if total_calls > 0 else 0.0
     conversion_rate_calls = (answered_calls / total_calls * 100) if total_calls > 0 else 0.0
@@ -148,6 +155,7 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
         "people_recalled": people_recalled,
         "vip_recalled": vip_recalled,
         "friend_added": friend_added,
+        "ftd_result": ftd_result,
         "conversion_rate_calls": round(conversion_rate_calls, 2),
         "conversion_rate_recalled": round(conversion_rate_recalled, 2),
     }
