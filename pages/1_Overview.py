@@ -84,11 +84,6 @@ if df.empty:
 df_original = df.copy()
 selected_date_range = None
 
-# Track if FTD Result should be shown (before Jan 6, 2026 only)
-show_ftd_result = False
-from datetime import date as date_type
-ftd_cutoff_date = date_type(2026, 1, 6)
-
 # Sidebar filters continued
 with st.sidebar:
 
@@ -104,9 +99,6 @@ with st.sidebar:
         if len(date_range) == 2:
             selected_date_range = date_range
             df = filter_by_date_range(df, date_range[0], date_range[1])
-            # Show FTD Result only if end date is before Jan 6, 2026
-            if year_int == 2026 and date_range[1] < ftd_cutoff_date:
-                show_ftd_result = True
 
     st.markdown("---")
 
@@ -145,13 +137,14 @@ col2.metric("No. of Recalled", format_number(kpis["people_recalled"]))
 col3.metric("VIP Recalled", format_number(kpis.get("vip_recalled", 0)))
 col4.metric("Recall Conv %", format_percentage(kpis["conversion_rate_recalled"]))
 
-# Row 3: Recharge Count, Friend Added, FTD Result (before Jan 6 only)
+# Row 3: Recharge Count, Friend Added, FTD Result (hide if 0)
 if year_int == 2026:
-    if show_ftd_result:
+    ftd_result = kpis.get("ftd_result", 0)
+    if ftd_result > 0:
         col1, col2, col3 = st.columns(3)
         col1.metric("Recharge Count", format_number(kpis["recharge_count"]))
         col2.metric("Friend Added", format_number(kpis.get("friend_added", 0)))
-        col3.metric("FTD Result", format_number(kpis.get("ftd_result", 0)))
+        col3.metric("FTD Result", format_number(ftd_result))
     else:
         col1, col2 = st.columns(2)
         col1.metric("Recharge Count", format_number(kpis["recharge_count"]))

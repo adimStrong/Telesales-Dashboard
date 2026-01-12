@@ -68,7 +68,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-def render_kpi_cards(kpis: dict, year: int = 2026, show_ftd_result: bool = False):
+def render_kpi_cards(kpis: dict, year: int = 2026):
     """Render the main KPI cards"""
     # Row 1: TOTAL CALLS, ANSWERED CALLS, NOT CONNECTED, CONNECTION RATE
     col1, col2, col3, col4 = st.columns(4)
@@ -124,9 +124,10 @@ def render_kpi_cards(kpis: dict, year: int = 2026, show_ftd_result: bool = False
             value=format_percentage(kpis["conversion_rate_recalled"]),
         )
 
-    # Row 3: Recharge Count, Friend Added, FTD Result (before Jan 6 only)
+    # Row 3: Recharge Count, Friend Added, FTD Result (hide if 0)
     if year == 2026:
-        if show_ftd_result:
+        ftd_result = kpis.get("ftd_result", 0)
+        if ftd_result > 0:
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.metric(
@@ -141,7 +142,7 @@ def render_kpi_cards(kpis: dict, year: int = 2026, show_ftd_result: bool = False
             with col3:
                 st.metric(
                     label="FTD Result",
-                    value=format_number(kpis.get("ftd_result", 0)),
+                    value=format_number(ftd_result),
                 )
         else:
             col1, col2 = st.columns(2)
@@ -217,11 +218,6 @@ def main():
     # Get date range
     min_date, max_date = get_unique_dates(df)
 
-    # Track if FTD Result should be shown (before Jan 6, 2026 only)
-    show_ftd_result = False
-    from datetime import date as date_type
-    ftd_cutoff_date = date_type(2026, 1, 6)
-
     # Sidebar filters continued
     with st.sidebar:
         # Date range filter
@@ -236,9 +232,6 @@ def main():
             )
             if len(date_range) == 2:
                 df = filter_by_date_range(df, date_range[0], date_range[1])
-                # Show FTD Result only if end date is before Jan 6, 2026
-                if year_int == 2026 and date_range[1] < ftd_cutoff_date:
-                    show_ftd_result = True
         else:
             st.info("No date data available")
 
@@ -311,7 +304,7 @@ def main():
     # Calculate and display KPIs
     st.markdown("### Key Performance Indicators")
     kpis = calculate_kpis(df)
-    render_kpi_cards(kpis, year=year_int, show_ftd_result=show_ftd_result)
+    render_kpi_cards(kpis, year=year_int)
 
     st.markdown("---")
 
