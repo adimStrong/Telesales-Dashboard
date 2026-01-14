@@ -107,18 +107,29 @@ def calculate_kpis(df: pd.DataFrame) -> dict:
     friend_added = int(df["friend_added"].sum()) if "friend_added" in df.columns else 0
 
     # Separate TL and agent recalled metrics
-    # VIP Recalled = TL rows only (agent_name contains "- TL " but NOT "- ATL ")
+    # VIP Recalled = specific TL names only
+    VIP_AGENT_NAMES = [
+        "TS001 - TL JADE",
+        "STL001 - TL MIKE",
+        "STL002 - TL DEX",
+        "TS043 - TL PERLIE",
+        "TS084 - TL MIRRA",
+        "TS085 - TL TRINA",
+        "TS167 - TL BOB",
+        "TS002 - TL NICOLE",
+    ]
+
     if "agent_name" in df.columns and "people_recalled" in df.columns:
-        # Match rows where agent_name contains "- TL " (Team Leader) but NOT "- ATL " (Assistant TL)
-        is_tl = df["agent_name"].apply(
-            lambda x: ("- TL " in str(x).upper() or " TL " in str(x).upper()) and "- ATL " not in str(x).upper()
+        # Match rows where agent_name is in VIP list (case-insensitive)
+        is_vip = df["agent_name"].apply(
+            lambda x: str(x).upper().strip() in [name.upper() for name in VIP_AGENT_NAMES]
         )
 
-        # VIP Recalled = TL's people_recalled
-        vip_recalled = int(df.loc[is_tl, "people_recalled"].sum())
+        # VIP Recalled = sum of VIP agent's people_recalled
+        vip_recalled = int(df.loc[is_vip, "people_recalled"].sum())
 
-        # People Recalled = Agents' people_recalled (excluding TL)
-        people_recalled = int(df.loc[~is_tl, "people_recalled"].sum())
+        # People Recalled = all others (excluding VIP)
+        people_recalled = int(df.loc[~is_vip, "people_recalled"].sum())
     else:
         # Fallback: no separation possible
         vip_recalled = 0
